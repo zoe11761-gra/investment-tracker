@@ -270,12 +270,11 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
   <div class="modal" id="modal-box"></div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-var firebaseConfig = {
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
   apiKey: "AIzaSyCc8tTh2r72EjJJE838dxlN79zJdpo44Gs",
   authDomain: "investment-5a6a3.firebaseapp.com",
   databaseURL: "https://investment-5a6a3-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -283,11 +282,11 @@ var firebaseConfig = {
   storageBucket: "investment-5a6a3.firebasestorage.app",
   messagingSenderId: "694278160852",
   appId: "1:694278160852:web:599f3b5a2c81bd2e80d641"
-};
-
-var app = initializeApp(firebaseConfig);
-var database = getDatabase(app);
-var dbRef = ref(database, 'grassTracker');
+});
+var database = firebase.database();
+var dbRef = database.ref('grassTracker');
+function set(r,d){return r.set(d);}
+function onValue(r,cb,errCb){r.on('value',function(snap){cb(snap);},errCb);}
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 var COMPANIES=['法巴人壽','台灣人壽','安聯人壽','富邦人壽'];
@@ -957,4 +956,117 @@ function openRecordModal(recId){
     +'<div class="modal-body">'
     +'<div class="fsec"><div class="fsec-title">基本資訊</div><div class="fgrid">'
     +'<div class="fgroup"><label class="flabel">檢視日期 *</label><input class="finput" id="r-date" type="date" value="'+(rec&&rec.reviewDate?rec.reviewDate:today)+'"></div>'
-    +'<div class="fgroup"><label class="flabel">帳面本金／帳戶金額 *</label><input class="finp
+    +'<div class="fgroup"><label class="flabel">帳面本金／帳戶金額 *</label><input class="finpnut" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
+    +extra+'</div></div>'
+    +'<div class="fsec"><div class="fsec-title">標的配置</div>'+tgHeader
+    +'<div id="r-targets-ed"></div>'
+    +'<div style="margin-top:8px"><button class="btn-icon add" onclick="addRTarget('+isM+')">＋</button></div></div>'
+    +'<div class="fsec"><div class="fsec-title">備註</div>'
+    +'<div class="fgroup"><textarea class="ftextarea" id="r-note" placeholder="備註…">'+(rec&&rec.note?rec.note:'')+'</textarea></div></div>'
+    +'</div>'
+    +'<div class="modal-footer"><button class="btn-secondary" onclick="closeModal()">取消</button>'
+    +'<button class="btn-gold" onclick="saveRecord(\''+(rec?rec.id:'')+'\'\'+\',\''+c.type+'\',\''+c.id+'\')">'+(rec?'儲存':'新增')+'</button></div>';
+  renderRTargets(isM);
+}
+function addRTarget(isM){rTargets.push(isM?{name:'',cashPct:'',unitPct:''}:{name:'',pct:''});renderRTargets(isM);}
+function removeRTarget(i,isM){rTargets.splice(i,1);if(!rTargets.length)rTargets.push(isM?{name:'',cashPct:'',unitPct:''}:{name:'',pct:''});renderRTargets(isM);}
+function updRT(i,f,v,isM){rTargets[i][f]=v;renderRTargets(isM);}
+function renderRTargets(isM){
+  var ed=document.getElementById('r-targets-ed');if(!ed)return;
+  var h='';
+  rTargets.forEach(function(t,i){
+    if(isM){
+      var sum=(parseFloat(t.cashPct)||0)+(parseFloat(t.unitPct)||0);
+      var sc=sum===100?'ok':sum>100?'over':'';
+      h+='<div class="trow trow-monthly">'
+        +'<input class="finput" placeholder="標的名稱" value="'+t.name+'" oninput="updRT('+i+',\'name\',this.value,true)">'
+        +'<input class="finput" type="number" placeholder="%" value="'+t.cashPct+'" oninput="updRT('+i+',\'cashPct\',this.value,true)" style="text-align:right;border-color:rgba(76,175,122,.4)">'
+        +'<input class="finput" type="number" placeholder="%" value="'+t.unitPct+'" oninput="updRT('+i+',\'unitPct\',this.value,true)" style="text-align:right;border-color:rgba(92,154,224,.4)">'
+        +'<div class="trow-sum '+sc+'">'+sum+'%</div>'
+        +'<button class="btn-icon" onclick="removeRTarget('+i+',true)">✕</button></div>';
+    } else {
+      h+='<div class="trow trow-regular">'
+        +'<input class="finput" placeholder="標的名稱" value="'+t.name+'" oninput="updRT('+i+',\'name\',this.value,false)">'
+        +'<input class="finput" type="number" placeholder="%" value="'+t.pct+'" oninput="updRT('+i+',\'pct\',this.value,false)" style="text-align:right;border-color:rgba(201,168,76,.4)">'
+        +'<button class="btn-icon" onclick="removeRTarget('+i+',false)">✕</button></div>';
+    }
+  });
+  if(!isM){
+    var tot=rTargets.reduce(function(s,t){return s+(parseFloat(t.pct)||0);},0);
+    var tc=tot===100?'var(--green)':tot>100?'var(--red)':'var(--text-muted)';
+    h+='<div style="font-size:11px;font-family:\'DM Mono\',monospace;color:'+tc+';margin-top:4px">合計 '+tot+'%'+(tot===100?' ✓':'')+'</div>';
+  }
+  ed.innerHTML=h;
+}
+function saveRecord(recId,type,cid){
+  var principal=document.getElementById('r-principal').value;
+  if(!principal){alert('請填寫帳面金額');return;}
+  var isM=type==='monthly';
+  var targets=rTargets.filter(function(t){return t.name.trim();});
+  var data={reviewDate:document.getElementById('r-date').value,principal:parseFloat(principal),
+    targets:targets,note:document.getElementById('r-note').value.trim()};
+  if(isM){var ci=document.getElementById('r-ci');data.cumInterest=ci?parseFloat(ci.value)||0:0;}
+  else{var cp=document.getElementById('r-cp');data.cumPaid=cp?parseFloat(cp.value)||0:0;}
+  var c=db.clients.find(function(x){return x.id===cid;});
+  if(!c.records)c.records=[];
+  if(recId){var idx=c.records.findIndex(function(r){return r.id===recId;});c.records[idx]=Object.assign({},c.records[idx],data);}
+  else{c.records.push(Object.assign({id:uid()},data));c.records.sort(function(a,b){return(a.reviewDate||'').localeCompare(b.reviewDate||'');});}
+  saveDB();closeModal();renderDetail();
+}
+function deleteRecord(recId){
+  if(!confirm('確定刪除此筆紀錄？'))return;
+  var c=db.clients.find(function(x){return x.id===currentId;});
+  c.records=c.records.filter(function(r){return r.id!==recId;});saveDB();renderDetail();
+}
+function openSavingsModal(id){
+  var s=id?(db.savings||[]).find(function(x){return x.id===id;}):null;
+  var coOpts=SAVINGS_COMPANIES.map(function(co){return'<option'+(s&&s.company===co?' selected':'')+'>'+co+'</option>';}).join('');
+  var curOpts=CURRENCIES.map(function(cu){return'<option'+(s&&s.currency===cu?' selected':'')+'>'+cu+'</option>';}).join('');
+  document.getElementById('modal-overlay').style.display='flex';
+  document.getElementById('modal-box').innerHTML=
+    '<div class="modal-header"><div class="modal-title">'+(s?'編輯儲蓄險':'新增儲蓄險')+'</div>'
+    +'<button class="modal-close" onclick="closeModal()">×</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="fsec"><div class="fsec-title">基本資料</div><div class="fgrid">'
+    +'<div class="fgroup"><label class="flabel">客戶姓名 *</label><input class="finput" id="sv-name" placeholder="姓名" value="'+(s?s.name:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">保險公司 *</label><select class="fselect" id="sv-company">'+coOpts+'</select></div>'
+    +'<div class="fgroup ffull"><label class="flabel">商品名稱</label><input class="finput" id="sv-product" placeholder="商品名稱" value="'+(s&&s.productName?s.productName:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">幣別</label><select class="fselect" id="sv-currency">'+curOpts+'</select></div>'
+    +'<div class="fgroup"><label class="flabel">簽約日期</label><input class="finput" id="sv-signDate" type="date" value="'+(s&&s.signDate?s.signDate:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">投保年期（年）</label><input class="finput" id="sv-years" type="number" placeholder="20" value="'+(s&&s.policyYears?s.policyYears:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">保費（每期）</label><input class="finput" id="sv-premium" type="number" placeholder="0" value="'+(s&&s.premium?s.premium:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">繳費頻率</label><select class="fselect" id="sv-payFreq">'
+    +'<option'+(s&&s.payFreq==='年繳'?' selected':!s||!s.payFreq?' selected':'')+'>年繳</option>'
+    +'<option'+(s&&s.payFreq==='月繳'?' selected':'')+'>月繳</option>'
+    +'</select></div>'
+    +'</div></div></div>'
+    +'<div class="modal-footer"><button class="btn-secondary" onclick="closeModal()">取消</button>'
+    +'<button class="btn-gold" onclick="saveSavings(\''+(s?s.id:'')+'\'\')">'+(s?'儲存變更':'新增')+'</button></div>';
+}
+function saveSavings(id){
+  var name=(document.getElementById('sv-name').value||'').trim();
+  if(!name){alert('請填寫客戶姓名');return;}
+  var data={name:name,company:document.getElementById('sv-company').value,
+    productName:document.getElementById('sv-product').value.trim(),
+    currency:document.getElementById('sv-currency').value,
+    signDate:document.getElementById('sv-signDate').value,
+    policyYears:parseInt(document.getElementById('sv-years').value)||0,
+    premium:parseFloat(document.getElementById('sv-premium').value)||0,
+    payFreq:document.getElementById('sv-payFreq').value};
+  if(!db.savings)db.savings=[];
+  if(id){var idx=db.savings.findIndex(function(s){return s.id===id;});db.savings[idx]=Object.assign({},db.savings[idx],data);}
+  else{db.savings.push(Object.assign({id:uid()},data));}
+  saveDB();closeModal();renderSavingsList();updateTabCounts();
+}
+function deleteSavings(id){
+  if(!confirm('確定刪除此筆儲蓄險資料？'))return;
+  db.savings=(db.savings||[]).filter(function(s){return s.id!==id;});
+  saveDB();renderSavingsList();updateTabCounts();
+}
+function goDetail(id){currentId=id;viewMode='detail';render();window.scrollTo(0,0);}
+function goList(){viewMode='list';render();}
+function closeModal(){document.getElementById('modal-overlay').style.display='none';}
+function overlayClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+</script>
+</body>
+</html>
