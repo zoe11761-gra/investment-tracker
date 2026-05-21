@@ -388,7 +388,7 @@ function fmtN(n,cur){
   var num=parseFloat(n);
   if(isNaN(num))return'—';
   var s=new Intl.NumberFormat('zh-TW',{maximumFractionDigits:0}).format(Math.abs(num));
-  var prefix=cur==='美金'?'USD ':cur==='台幣'?'NT$':'$';
+  var prefix=cur==='美金'?'USD. ':cur==='台幣'?'NT. ':'NT. ';
   return(num<0?'-':'')+prefix+s;
 }
 function fmtM(n){
@@ -1075,28 +1075,27 @@ function openRecordModal(recId){
   var isM=c.type==='monthly';
   var today=new Date().toISOString().slice(0,10);
   var extra=isM
-    ?'<div class="fgroup"><label class="flabel">累計已領利息</label><input class="finput" id="r-ci" type="number" placeholder="0" value="'+(rec&&rec.cumInterest?rec.cumInterest:'')+'"></div>'
-    :'<div class="fgroup"><label class="flabel">累計已繳本金</label><input class="finput" id="r-cp" type="number" placeholder="0" value="'+(rec&&rec.cumPaid?rec.cumPaid:'')+'"></div>';
-  var tgHeader=isM
-    ?'<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--text-muted);margin-bottom:8px">填寫各標的現金/買回比例</div>'
-    :'<div style="font-size:10px;font-family:\'DM Mono\',monospace;color:var(--text-muted);margin-bottom:8px">填寫標的名稱及配置比例（合計100%）</div>';
+    ?'<div class="fgroup"><label class="flabel">帳戶價值 *</label><input class="finput" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
+     +'<div class="fgroup"><label class="flabel">累計已領總利息</label><input class="finput" id="r-ci" type="number" placeholder="0" value="'+(rec&&rec.cumInterest?rec.cumInterest:'')+'"></div>'
+    :'<div class="fgroup"><label class="flabel">帳戶金額 *</label><input class="finput" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
+     +'<div class="fgroup"><label class="flabel">累計已繳本金</label><input class="finput" id="r-cp" type="number" placeholder="0" value="'+(rec&&rec.cumPaid?rec.cumPaid:'')+'"></div>';
+  window._recId=rec?rec.id:'';
+  window._ctype=c.type;
+  window._cid=c.id;
   document.getElementById('modal-overlay').style.display='flex';
   document.getElementById('modal-box').innerHTML=
     '<div class="modal-header"><div class="modal-title">'+(rec?'編輯':'新增')+'檢視紀錄 — '+c.name+'</div><button class="modal-close" onclick="closeModal()">×</button></div>'
     +'<div class="modal-body">'
     +'<div class="fsec"><div class="fsec-title">基本資訊</div><div class="fgrid">'
     +'<div class="fgroup"><label class="flabel">檢視日期 *</label><input class="finput" id="r-date" type="date" value="'+(rec&&rec.reviewDate?rec.reviewDate:today)+'"></div>'
-    +'<div class="fgroup"><label class="flabel">帳面本金／帳戶金額 *</label><input class="finput" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
-    +extra+'</div></div>'
-    +'<div class="fsec"><div class="fsec-title">標的配置</div>'+tgHeader
-    +'<div id="r-targets-ed"></div>'
-    +'<div style="margin-top:8px"><button class="btn-icon add" onclick="addRTarget('+isM+')">＋</button></div></div>'
+    +extra
+    +'</div></div>'
     +'<div class="fsec"><div class="fsec-title">備註</div>'
     +'<div class="fgroup"><textarea class="ftextarea" id="r-note" placeholder="備註…">'+(rec&&rec.note?rec.note:'')+'</textarea></div></div>'
     +'</div>'
     +'<div class="modal-footer"><button class="btn-secondary" onclick="closeModal()">取消</button>'
-    +'<button class="btn-gold" onclick="saveRecord(\''+(rec?rec.id:'')+'\'\'+\',\''+c.type+'\',\''+c.id+'\')">'+(rec?'儲存':'新增')+'</button></div>';
-  renderRTargets(isM);
+    +'<button class="btn-gold" onclick="doSaveRecord()">'
+    +(rec?'儲存':'新增')+'</button></div>';
 }
 function addRTarget(isM){rTargets.push(isM?{name:'',cashPct:'',unitPct:''}:{name:'',pct:''});renderRTargets(isM);}
 function removeRTarget(i,isM){rTargets.splice(i,1);if(!rTargets.length)rTargets.push(isM?{name:'',cashPct:'',unitPct:''}:{name:'',pct:''});renderRTargets(isM);}
@@ -1145,6 +1144,36 @@ function renderRTargets(isM){
   }
   ed.innerHTML=h;
 }
+
+function doSaveRecord(){
+  var recId=window._recId||'';
+  var type=window._ctype||'monthly';
+  var cid=window._cid||'';
+  var principal=document.getElementById('r-principal')?document.getElementById('r-principal').value:'';
+  if(!principal){alert('請填寫帳面金額');return;}
+  var isM=type==='monthly';
+  var data={
+    reviewDate:document.getElementById('r-date')?document.getElementById('r-date').value:'',
+    principal:parseFloat(principal),
+    targets:rTargets.filter(function(t){return t.name&&t.name.trim();}),
+    note:document.getElementById('r-note')?document.getElementById('r-note').value.trim():''
+  };
+  if(isM){var ci=document.getElementById('r-ci');data.cumInterest=ci?parseFloat(ci.value)||0:0;}
+  else{var cp=document.getElementById('r-cp');data.cumPaid=cp?parseFloat(cp.value)||0:0;}
+  var c=db.clients.find(function(x){return x.id===cid;});
+  if(!c){alert('找不到客戶資料');return;}
+  if(!c.records)c.records=[];
+  if(recId){
+    var idx=c.records.findIndex(function(r){return r.id===recId;});
+    if(idx>=0)c.records[idx]=Object.assign({},c.records[idx],data);
+    else c.records.push(Object.assign({id:uid()},data));
+  } else {
+    c.records.push(Object.assign({id:uid()},data));
+    c.records.sort(function(a,b){return(a.reviewDate||'').localeCompare(b.reviewDate||'');});
+  }
+  saveDB();closeModal();renderDetail();
+}
+window.doSaveRecord=doSaveRecord;
 function saveRecord(recId,type,cid){
   var principal=document.getElementById('r-principal').value;
   if(!principal){alert('請填寫帳面金額');return;}
