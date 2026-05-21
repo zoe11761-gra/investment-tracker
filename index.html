@@ -289,10 +289,40 @@ function set(r,d){return r.set(d);}
 function onValue(r,cb,errCb){r.on('value',function(snap){cb(snap);},errCb);}
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
-var COMPANIES=['法巴人壽','台灣人壽','安聯人壽','富邦人壽'];
-var SAVINGS_COMPANIES=['富邦人壽','全球人壽','保誠人壽'];
-var PRODUCTS=['真鑽發發','10來旺','金采年華','吉利發發','UNOB','UNAB'];
 var CURRENCIES=['台幣','美金'];
+var POLICY_TYPE_OPTS=['年金','壽險'];
+// 月配息：{company, product}
+var MONTHLY_PRODUCTS=[
+  {company:'台灣人壽',product:'臻鑽發發'},
+  {company:'法巴人壽',product:'金采年華'},
+  {company:'安聯人壽',product:'吉利發發'}
+];
+// 定期定額：{company, product}
+var REGULAR_PRODUCTS=[
+  {company:'安聯人壽',product:'10來旺'},
+  {company:'富邦人壽',product:'UNAB'},
+  {company:'富邦人壽',product:'UNOB'}
+];
+// 儲蓄險：{company, product}
+var SAVINGS_PRODUCTS=[
+  {company:'保誠人壽',product:'紅不讓'},
+  {company:'保誠人壽',product:'愛美利'},
+  {company:'保誠人壽',product:'福安滿利'},
+  {company:'保誠人壽',product:'美滿相傳'},
+  {company:'全球人壽',product:'非常美'},
+  {company:'富邦人壽',product:'IWQ'},
+  {company:'富邦人壽',product:'IWX'},
+  {company:'富邦人壽',product:'FJW'}
+];
+// backward compat
+var COMPANIES=MONTHLY_PRODUCTS.map(function(x){return x.company;}).filter(function(v,i,a){return a.indexOf(v)===i;});
+var SAVINGS_COMPANIES=SAVINGS_PRODUCTS.map(function(x){return x.company;}).filter(function(v,i,a){return a.indexOf(v)===i;});
+function productOptsHtml(list, selCompany, selProduct){
+  return list.map(function(p){
+    var sel=(p.company===selCompany&&p.product===selProduct)?' selected':'';
+    return'<option value="'+p.company+'|'+p.product+'"'+sel+'>'+p.company+' — '+p.product+'</option>';
+  }).join('');
+}
 
 var DEMO={
   clients:[
@@ -612,10 +642,10 @@ function buildMonthlyRow(c){
     +'<td style="color:var(--text-dim);font-size:12px">'+c.productName+'</td>'
     +'<td><span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span></td>'
     +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(c.signDate||'—')+'</td>'
-    +'<td class="amount">'+fmtN(initP)+'</td>'
-    +'<td class="amount">'+(last?fmtN(latestP):'<span style="color:var(--text-muted)">—</span>')+'</td>'
+    +'<td class="amount">'+fmtN(initP,c.currency)+'</td>'
+    +'<td class="amount">'+(last?fmtN(latestP,c.currency):'<span style="color:var(--text-muted)">—</span>')+'</td>'
     +'<td>'+pctSpan(pct)+'</td>'
-    +'<td class="amount" style="color:var(--green)">'+(cumInt>0?fmtN(cumInt):'—')+'</td>'
+    +'<td class="amount" style="color:var(--green)">'+(cumInt>0?fmtN(cumInt,c.currency):'—')+'</td>'
     +'<td onclick="event.stopPropagation()"><div class="action-btns">'
     +'<button class="btn-sm btn-view" onclick="goDetail(\''+c.id+'\')">查看</button>'
     +'<button class="btn-sm btn-edit" onclick="openClientModal(\''+c.id+'\')">編輯</button>'
@@ -626,10 +656,21 @@ function renderMonthlyList(){
   var all=db.clients.filter(function(c){return c.type==='monthly';});
   var totalP=0,totalInt=0;
   all.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l){totalP+=parseFloat(l.principal)||0;totalInt+=parseFloat(l.cumInterest)||0;}});
+  var twd_p=0,usd_p=0,twd_i=0,usd_i=0;
+  all.forEach(function(c){
+    var l=c.records&&c.records.length?c.records[c.records.length-1]:null;
+    if(l){
+      if(c.currency==='美金'){usd_p+=parseFloat(l.principal)||0;usd_i+=parseFloat(l.cumInterest)||0;}
+      else{twd_p+=parseFloat(l.principal)||0;twd_i+=parseFloat(l.cumInterest)||0;}
+    }
+  });
+  var pStr=(twd_p>0?'NT. '+Math.round(twd_p).toLocaleString():'')+(twd_p>0&&usd_p>0?' / ':'')+(usd_p>0?'USD. '+Math.round(usd_p).toLocaleString():'');
+  var iStr=(twd_i>0?'NT. '+Math.round(twd_i).toLocaleString():'')+(twd_i>0&&usd_i>0?' / ':'')+(usd_i>0?'USD. '+Math.round(usd_i).toLocaleString():'');
   var rows=sortClients(all).map(buildMonthlyRow).join('');
   document.getElementById('app').innerHTML=
-    '<div class="stats-bar stats-bar-3">'
-    +sCard('月配息客戶',all.length,'位')+sCard('最新帳面合計',fmtM(totalP),'元')+sCard('累計利息合計',fmtM(totalInt),'元')
+    '<div class="stats-bar stats-bar-4">'
+    +sCard('月配息客戶',all.length,'位')+sCard('最新帳面合計',pStr||'—','')+sCard('累計利息合計',iStr||'—','')
+    +sCard('美金件數',all.filter(function(c){return c.currency==='美金';}).length,'件')
     +'</div>'
     +'<div class="section-header"><div class="section-title">月配息保單客戶</div>'
     +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
@@ -797,6 +838,7 @@ function makeDetailCol1(c,typeName,typeTagClass){
     +'<div style="font-size:14px;color:var(--text-dim)">'+c.company+'　'+c.productName+'</div>'
     +'<div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">'
     +'<span class="tag '+typeTagClass+'">'+typeName+'</span>'
+    +(c.policyType?'<span class="tag tag-company">'+c.policyType+'</span>':'')
     +'<span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span>'
     +(c.payFreq?'<span class="tag tag-company">'+c.payFreq+'</span>':'')
     +(c.isPaused?'<span class="tag tag-paused">緩繳中</span>':'')
@@ -826,9 +868,13 @@ function renderMonthlyDetail(c){
   tgHtml+='</div></div>';
   var detailCard='<div class="detail-card"><div class="detail-top">'
     +makeDetailCol1(c,'月配息','tag-monthly')
-    +'<div class="ds"><div class="ds-label">進場本金</div><div class="ds-val gold">'+fmtN(initP)+'</div></div>'
-    +(last?'<div class="ds"><div class="ds-label">最新帳面</div><div class="ds-val">'+fmtN(latestP)+'</div>'+(pct!==null?'<div style="margin-top:5px;font-size:14px" class="'+pctClass+'">'+pctText+'</div>':'')+'</div>':'<div class="ds" style="opacity:.4"><div class="ds-label">最新帳面</div><div class="ds-val">—</div></div>')
-    +'<div class="ds"><div class="ds-label">累計已領利息</div><div class="ds-val green">'+fmtN(cumInt)+'</div></div>'
+    +'<div class="ds"><div class="ds-label">進場本金</div><div class="ds-val gold">'+fmtN(initP,c.currency)+'</div></div>'
+    +(last?'<div class="ds"><div class="ds-label">最新帳面</div><div class="ds-val">'+fmtN(latestP,c.currency)+'</div>'+(pct!==null?'<div style="margin-top:5px;font-size:14px" class="'+pctClass+'">'+pctText+'</div>':'')+'</div>':'<div class="ds" style="opacity:.4"><div class="ds-label">最新帳面</div><div class="ds-val">—</div></div>')
+    +'<div class="ds"><div class="ds-label">累計已領利息</div><div class="ds-val green">'+fmtN(cumInt,c.currency)+'</div></div>'
+    +(initP>0?'<div class="ds"><div class="ds-label">本金+利息 還原漲幅</div>'
+      +'<div class="ds-val '+(latestP+cumInt>=initP?'green':'pct-neg')+'">'
+      +(function(){var rp=calcPct(latestP+cumInt,initP);return rp===null?'—':(rp>=0?'▲ +':'▼ ')+Math.abs(rp).toFixed(2)+'%';})()
+      +'</div></div>':'')
     +'</div></div>';
   var recHtml='';
   if(!records.length){recHtml='<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無檢視紀錄</div></div>';}
@@ -927,12 +973,21 @@ window.openClientModal=openClientModal;
 
 function renderClientModal(c){
   var isEdit=!!c;
-  var pOpts=PRODUCTS.map(function(p){return'<option'+(c&&c.productName===p?' selected':'')+'>'+p+'</option>';}).join('');
-  var coOpts=COMPANIES.map(function(co){return'<option'+(c&&c.company===co?' selected':'')+'>'+co+'</option>';}).join('');
+  var productList=mType==='monthly'?MONTHLY_PRODUCTS:REGULAR_PRODUCTS;
+  var selKey=(c&&c.company&&c.productName)?c.company+'|'+c.productName:'';
+  var cpOpts=productOptsHtml(productList,'','');
+  // Re-select
+  cpOpts=productList.map(function(p){
+    var k=p.company+'|'+p.product;
+    var sel=(c&&c.company===p.company&&c.productName===p.product)?' selected':'';
+    return'<option value="'+k+'"'+sel+'>'+p.company+' — '+p.product+'</option>';
+  }).join('');
   var curOpts=CURRENCIES.map(function(cu){return'<option'+(c&&c.currency===cu?' selected':'')+'>'+cu+'</option>';}).join('');
   var extraFields='';
   if(mType==='monthly'){
-    extraFields='<div class="fgroup"><label class="flabel">進場本金 *</label><input class="finput" id="f-ep" type="number" placeholder="0" value="'+(c&&c.entryPrincipal?c.entryPrincipal:'')+'"></div>';
+    var ptOpts=POLICY_TYPE_OPTS.map(function(t){return'<option'+(c&&c.policyType===t?' selected':'')+'>'+t+'</option>';}).join('');
+    extraFields='<div class="fgroup"><label class="flabel">進場本金 *</label><input class="finput" id="f-ep" type="number" placeholder="0" value="'+(c&&c.entryPrincipal?c.entryPrincipal:'')+'"></div>'
+      +'<div class="fgroup"><label class="flabel">年金 / 壽險</label><select class="fselect" id="f-ptype">'+ptOpts+'</select></div>';
   } else {
     extraFields='<div class="fgroup"><label class="flabel">目標保費（每期）*</label><input class="finput" id="f-tp" type="number" placeholder="0" value="'+(c&&c.targetPremium?c.targetPremium:'')+'"></div>'
       +'<div class="fgroup"><label class="flabel">繳費頻率</label><select class="fselect" id="f-payFreq"><option'+(c&&c.payFreq==='月繳'?' selected':!c||!c.payFreq?' selected':'')+'>月繳</option><option'+(c&&c.payFreq==='年繳'?' selected':'')+'>年繳</option></select></div>'
@@ -950,8 +1005,7 @@ function renderClientModal(c){
     +'</div></div>'
     +'<div class="fsec"><div class="fsec-title">基本資料</div><div class="fgrid">'
     +'<div class="fgroup"><label class="flabel">客戶姓名 *</label><input class="finput" id="f-name" placeholder="姓名" value="'+(c?c.name:'')+'"></div>'
-    +'<div class="fgroup"><label class="flabel">保險公司 *</label><select class="fselect" id="f-company">'+coOpts+'</select></div>'
-    +'<div class="fgroup"><label class="flabel">商品名稱 *</label><select class="fselect" id="f-product">'+pOpts+'</select></div>'
+    +'<div class="fgroup"><label class="flabel">保險公司 / 商品 *</label><select class="fselect" id="f-cp">'+cpOpts+'</select></div>'
     +'<div class="fgroup"><label class="flabel">幣別</label><select class="fselect" id="f-currency">'+curOpts+'</select></div>'
     +'<div class="fgroup"><label class="flabel">簽約日期</label><input class="finput" id="f-signDate" type="date" value="'+(c&&c.signDate?c.signDate:'')+'"></div>'
     +extraFields+'</div></div>'
@@ -1033,8 +1087,9 @@ function renderMTargets(){
 function saveClient(id){
   var name=(document.getElementById('f-name').value||'').trim();
   if(!name){alert('請填寫客戶姓名');return;}
-  var data={name:name,company:document.getElementById('f-company').value,
-    productName:document.getElementById('f-product').value,
+  var cpVal=(document.getElementById('f-cp')?document.getElementById('f-cp').value:'').split('|');
+  var data={name:name,company:cpVal[0]||'',
+    productName:cpVal[1]||'',
     currency:document.getElementById('f-currency').value,
     signDate:document.getElementById('f-signDate').value,
     type:mType,targets:mTargets.filter(function(t){return t.name.trim();})};
@@ -1042,6 +1097,7 @@ function saveClient(id){
     var ep=document.getElementById('f-ep');
     if(!ep||!ep.value){alert('請填寫進場本金');return;}
     data.entryPrincipal=parseFloat(ep.value);
+    var ptEl=document.getElementById('f-ptype');if(ptEl)data.policyType=ptEl.value;
   } else {
     var tp=document.getElementById('f-tp');
     if(!tp||!tp.value){alert('請填寫目標保費');return;}
@@ -1202,7 +1258,11 @@ window.removeRTarget=removeRTarget;
 window.updRT=updRT;
 function openSavingsModal(id){
   var s=id?(db.savings||[]).find(function(x){return x.id===id;}):null;
-  var coOpts=SAVINGS_COMPANIES.map(function(co){return'<option'+(s&&s.company===co?' selected':'')+'>'+co+'</option>';}).join('');
+  var svCpOpts=SAVINGS_PRODUCTS.map(function(p){
+    var k=p.company+'|'+p.product;
+    var sel=(s&&s.company===p.company&&s.productName===p.product)?' selected':'';
+    return'<option value="'+k+'"'+sel+'>'+p.company+' — '+p.product+'</option>';
+  }).join('');
   var curOpts=CURRENCIES.map(function(cu){return'<option'+(s&&s.currency===cu?' selected':'')+'>'+cu+'</option>';}).join('');
   document.getElementById('modal-overlay').style.display='flex';
   document.getElementById('modal-box').innerHTML=
@@ -1211,8 +1271,7 @@ function openSavingsModal(id){
     +'<div class="modal-body">'
     +'<div class="fsec"><div class="fsec-title">基本資料</div><div class="fgrid">'
     +'<div class="fgroup"><label class="flabel">客戶姓名 *</label><input class="finput" id="sv-name" placeholder="姓名" value="'+(s?s.name:'')+'"></div>'
-    +'<div class="fgroup"><label class="flabel">保險公司 *</label><select class="fselect" id="sv-company">'+coOpts+'</select></div>'
-    +'<div class="fgroup ffull"><label class="flabel">商品名稱</label><input class="finput" id="sv-product" placeholder="商品名稱" value="'+(s&&s.productName?s.productName:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">保險公司 / 商品 *</label><select class="fselect" id="sv-cp">'+svCpOpts+'</select></div>'
     +'<div class="fgroup"><label class="flabel">幣別</label><select class="fselect" id="sv-currency">'+curOpts+'</select></div>'
     +'<div class="fgroup"><label class="flabel">簽約日期</label><input class="finput" id="sv-signDate" type="date" value="'+(s&&s.signDate?s.signDate:'')+'"></div>'
     +'<div class="fgroup"><label class="flabel">投保年期（年）</label><input class="finput" id="sv-years" type="number" placeholder="20" value="'+(s&&s.policyYears?s.policyYears:'')+'"></div>'
@@ -1230,8 +1289,9 @@ window.openSavingsModal=openSavingsModal;
 function saveSavings(id){
   var name=(document.getElementById('sv-name').value||'').trim();
   if(!name){alert('請填寫客戶姓名');return;}
-  var data={name:name,company:document.getElementById('sv-company').value,
-    productName:document.getElementById('sv-product').value.trim(),
+  var svCpVal=(document.getElementById('sv-cp')?document.getElementById('sv-cp').value:'').split('|');
+  var data={name:name,company:svCpVal[0]||'',
+    productName:svCpVal[1]||'',
     currency:document.getElementById('sv-currency').value,
     signDate:document.getElementById('sv-signDate').value,
     policyYears:parseInt(document.getElementById('sv-years').value)||0,
