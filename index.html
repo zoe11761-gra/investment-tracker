@@ -425,6 +425,25 @@ function calcPolicyYear(signDate){
   if(m<0||(m===0&&now.getDate()<sign.getDate()))y--;
   return Math.max(1,y+1);
 }
+function calcCumPremium(signDate,premium,payFreq){
+  if(!signDate||!premium)return 0;
+  var sign=new Date(signDate);
+  var now=new Date();
+  var p=parseFloat(premium)||0;
+  if(payFreq==='月繳'){
+    // 從簽約月份（含）到現在月份（含）共幾個月
+    var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
+    if(months<1)months=1;
+    return p*months;
+  } else {
+    // 年繳：已完成幾個保單年度
+    var years=now.getFullYear()-sign.getFullYear();
+    var md=now.getMonth()-sign.getMonth();
+    if(md<0||(md===0&&now.getDate()<sign.getDate()))years--;
+    if(years<0)years=0;
+    return p*(years+1);
+  }
+}
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(tab){
@@ -638,7 +657,20 @@ function renderRegularList(){
 // ─── SAVINGS LIST ─────────────────────────────────────────────────────────────
 function buildSavingsRow(s){
   var py=calcPolicyYear(s.signDate);
-  var cum=py&&s.premium?parseFloat(s.premium)*py:0;
+  var cum=calcCumPremium(s.signDate,s.premium,s.payFreq);
+  var freqLabel=s.payFreq||'年繳';
+  // Show how many periods paid
+  var paidLabel='';
+  if(s.signDate && s.premium){
+    if(freqLabel==='月繳'){
+      var sign=new Date(s.signDate),now=new Date();
+      var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
+      if(months<1)months=1;
+      paidLabel=' ('+months+'個月)';
+    } else {
+      paidLabel=' ('+(py||1)+'年)';
+    }
+  }
   return'<tr>'
     +'<td style="font-weight:500">'+s.name+'</td>'
     +'<td><span class="tag tag-company">'+s.company+'</span></td>'
@@ -647,8 +679,8 @@ function buildSavingsRow(s){
     +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.signDate||'—')+'</td>'
     +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.policyYears?s.policyYears+'年':'—')+'</td>'
     +'<td style="font-family:\'DM Mono\',monospace;font-size:13px;color:var(--gold)">'+(py?'第 '+py+' 年':'—')+'</td>'
-    +'<td class="amount">'+fmtN(s.premium)+'/'+(s.payFreq||'年繳')+'</td>'
-    +'<td class="amount" style="color:var(--gold-light)">'+(cum>0?fmtN(cum):'—')+'</td>'
+    +'<td class="amount">'+fmtN(s.premium)+'/'+freqLabel+'</td>'
+    +'<td class="amount" style="color:var(--gold-light)">'+(cum>0?fmtN(cum)+paidLabel:'—')+'</td>'
     +'<td><div class="action-btns">'
     +'<button class="btn-sm btn-edit" onclick="openSavingsModal(\''+s.id+'\')">編輯</button>'
     +'<button class="btn-sm btn-del" onclick="deleteSavings(\''+s.id+'\')">✕</button>'
