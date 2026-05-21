@@ -420,10 +420,14 @@ function sCard(label,val,sub){
 function calcPolicyYear(signDate){
   if(!signDate)return null;
   var sign=new Date(signDate),now=new Date();
-  var y=now.getFullYear()-sign.getFullYear();
-  var m=now.getMonth()-sign.getMonth();
-  if(m<0||(m===0&&now.getDate()<sign.getDate()))y--;
-  return Math.max(1,y+1);
+  // 計算年份差
+  var years=now.getFullYear()-sign.getFullYear();
+  // 今年的週年日
+  var anniversary=new Date(now.getFullYear(),sign.getMonth(),sign.getDate());
+  // 如果今天還沒到達週年日，年度數要少一年
+  if(now<anniversary)years--;
+  if(years<0)years=0;
+  return years+1; // 第1年起算
 }
 function calcCumPremium(signDate,premium,payFreq){
   if(!signDate||!premium)return 0;
@@ -431,17 +435,12 @@ function calcCumPremium(signDate,premium,payFreq){
   var now=new Date();
   var p=parseFloat(premium)||0;
   if(payFreq==='月繳'){
-    // 從簽約月份（含）到現在月份（含）共幾個月
     var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
     if(months<1)months=1;
     return p*months;
   } else {
-    // 年繳：已完成幾個保單年度
-    var years=now.getFullYear()-sign.getFullYear();
-    var md=now.getMonth()-sign.getMonth();
-    if(md<0||(md===0&&now.getDate()<sign.getDate()))years--;
-    if(years<0)years=0;
-    return p*(years+1);
+    var py=calcPolicyYear(signDate);
+    return p*(py||1);
   }
 }
 
@@ -462,10 +461,11 @@ function switchTab(tab){
 window.switchTab=switchTab;
 
 function updateTabCounts(){
-  document.getElementById('tc-all').textContent=db.clients.length;
+  var sv=(db.savings||[]).length;
+  document.getElementById('tc-all').textContent=db.clients.length+sv;
   document.getElementById('tc-monthly').textContent=db.clients.filter(function(c){return c.type==='monthly';}).length;
   document.getElementById('tc-regular').textContent=db.clients.filter(function(c){return c.type==='regular';}).length;
-  document.getElementById('tc-savings').textContent=(db.savings||[]).length;
+  document.getElementById('tc-savings').textContent=sv;
 }
 function doSort(col){
   if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=1;}
@@ -544,17 +544,46 @@ function buildAllRow(c){
     +'<button class="btn-sm btn-del" onclick="deleteClient(\''+c.id+'\')">✕</button>'
     +'</div></td></tr>';
 }
+function buildSavingsAllRow(s){
+  var py=calcPolicyYear(s.signDate);
+  var cum=calcCumPremium(s.signDate,s.premium,s.payFreq);
+  var freqLabel=s.payFreq||'年繳';
+  var paidLabel='';
+  if(s.signDate&&s.premium&&freqLabel==='月繳'){
+    var sign=new Date(s.signDate),now=new Date();
+    var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
+    if(months<1)months=1;
+    paidLabel=' ('+months+'個月)';
+  }
+  return'<tr>'
+    +'<td style="font-weight:500">'+s.name+'</td>'
+    +'<td><span class="tag tag-savings">儲蓄險</span></td>'
+    +'<td><span class="tag tag-company">'+s.company+'</span></td>'
+    +'<td style="color:var(--text-dim);font-size:12px">'+(s.productName||'—')+'</td>'
+    +'<td><span class="tag '+(s.currency==='美金'?'tag-usd':'tag-twd')+'">'+s.currency+'</span></td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.signDate||'—')+'</td>'
+    +'<td class="amount" style="color:var(--text-dim)">—</td>'
+    +'<td style="color:var(--text-muted)">—</td>'
+    +'<td class="amount" style="color:var(--gold-light)">'+(cum>0?fmtN(cum)+paidLabel:'—')+'</td>'
+    +'<td><div class="action-btns">'
+    +'<button class="btn-sm btn-edit" onclick="openSavingsModal(\''+s.id+'\')">編輯</button>'
+    +'<button class="btn-sm btn-del" onclick="deleteSavings(\''+s.id+'\')">✕</button>'
+    +'</div></td></tr>';
+}
 function renderAllList(){
-  var all=db.clients;
+  var clients=db.clients;
+  var savings=db.savings||[];
+  var totalClients=clients.length+savings.length;
   var totalP=0;
-  all.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l)totalP+=parseFloat(l.principal)||0;});
-  var rows=sortClients(all).map(buildAllRow).join('');
+  clients.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l)totalP+=parseFloat(l.principal)||0;});
+  var clientRows=sortClients(clients).map(buildAllRow).join('');
+  var savingsRows=savings.map(buildSavingsAllRow).join('');
   document.getElementById('app').innerHTML=
     '<div class="stats-bar stats-bar-4">'
-    +sCard('總客戶',all.length,'位')
-    +sCard('月配息',all.filter(function(c){return c.type==='monthly';}).length,'件')
-    +sCard('定期定額',all.filter(function(c){return c.type==='regular';}).length,'件')
-    +sCard('緩繳中',all.filter(function(c){return c.isPaused;}).length,'件')
+    +sCard('總客戶',totalClients,'位')
+    +sCard('月配息',clients.filter(function(c){return c.type==='monthly';}).length,'件')
+    +sCard('定期定額',clients.filter(function(c){return c.type==='regular';}).length,'件')
+    +sCard('儲蓄險',savings.length,'件')
     +'</div>'
     +'<div class="section-header"><div class="section-title">全部客戶</div>'
     +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
@@ -562,8 +591,8 @@ function renderAllList(){
     +thSort('name','客戶姓名')+'<th>類型</th>'
     +thSort('company','保險公司')+thSort('product','商品')+thSort('currency','幣別')+thSort('signDate','簽約日期')
     +thSort('latestP','最新帳面')+thSort('pct','漲幅')+'<th>利息／已繳</th><th>操作</th>'
-    +'</tr></thead><tbody id="list-tbody">'+rows+'</tbody></table>'
-    +(all.length===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無客戶資料</div></div>':'')
+    +'</tr></thead><tbody id="list-tbody">'+clientRows+savingsRows+'</tbody></table>'
+    +(totalClients===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無客戶資料</div></div>':'')
     +'</div>';
 }
 
@@ -659,17 +688,12 @@ function buildSavingsRow(s){
   var py=calcPolicyYear(s.signDate);
   var cum=calcCumPremium(s.signDate,s.premium,s.payFreq);
   var freqLabel=s.payFreq||'年繳';
-  // Show how many periods paid
   var paidLabel='';
-  if(s.signDate && s.premium){
-    if(freqLabel==='月繳'){
-      var sign=new Date(s.signDate),now=new Date();
-      var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
-      if(months<1)months=1;
-      paidLabel=' ('+months+'個月)';
-    } else {
-      paidLabel=' ('+(py||1)+'年)';
-    }
+  if(s.signDate&&s.premium&&freqLabel==='月繳'){
+    var sign=new Date(s.signDate),now=new Date();
+    var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
+    if(months<1)months=1;
+    paidLabel=' ('+months+'個月)';
   }
   return'<tr>'
     +'<td style="font-weight:500">'+s.name+'</td>'
@@ -678,17 +702,46 @@ function buildSavingsRow(s){
     +'<td><span class="tag '+(s.currency==='美金'?'tag-usd':'tag-twd')+'">'+s.currency+'</span></td>'
     +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.signDate||'—')+'</td>'
     +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.policyYears?s.policyYears+'年':'—')+'</td>'
-    +'<td style="font-family:\'DM Mono\',monospace;font-size:13px;color:var(--gold)">'+(py?'第 '+py+' 年':'—')+'</td>'
     +'<td class="amount">'+fmtN(s.premium)+'/'+freqLabel+'</td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:13px;color:var(--gold)">'+(py?'第 '+py+' 年':'—')+'</td>'
     +'<td class="amount" style="color:var(--gold-light)">'+(cum>0?fmtN(cum)+paidLabel:'—')+'</td>'
     +'<td><div class="action-btns">'
     +'<button class="btn-sm btn-edit" onclick="openSavingsModal(\''+s.id+'\')">編輯</button>'
     +'<button class="btn-sm btn-del" onclick="deleteSavings(\''+s.id+'\')">✕</button>'
     +'</div></td></tr>';
 }
+function sortSavings(arr){
+  if(!sortCol)return arr;
+  return arr.slice().sort(function(a,b){
+    var av,bv;
+    if(sortCol==='sv-name'){av=a.name;bv=b.name;}
+    else if(sortCol==='sv-company'){av=a.company;bv=b.company;}
+    else if(sortCol==='sv-product'){av=a.productName||'';bv=b.productName||'';}
+    else if(sortCol==='sv-currency'){av=a.currency;bv=b.currency;}
+    else if(sortCol==='sv-signDate'){av=a.signDate||'';bv=b.signDate||'';}
+    else if(sortCol==='sv-years'){av=parseFloat(a.policyYears)||0;bv=parseFloat(b.policyYears)||0;}
+    else if(sortCol==='sv-premium'){av=parseFloat(a.premium)||0;bv=parseFloat(b.premium)||0;}
+    else if(sortCol==='sv-pyear'){av=calcPolicyYear(a.signDate)||0;bv=calcPolicyYear(b.signDate)||0;}
+    else if(sortCol==='sv-cum'){av=calcCumPremium(a.signDate,a.premium,a.payFreq);bv=calcCumPremium(b.signDate,b.premium,b.payFreq);}
+    else{av='';bv='';}
+    if(typeof av==='string')return av.localeCompare(bv)*sortDir;
+    return(av-bv)*sortDir;
+  });
+}
+function thSortSv(col,label){
+  var sc=sortCol===col?'sorted-'+(sortDir===1?'asc':'desc'):'';
+  var arrow=sortCol===col?(sortDir===1?' ↑':' ↓'):' ↕';
+  return'<th class="'+sc+'" onclick="doSortSv(\''+col+'\')">'+label+'<span class="sort-icon">'+arrow+'</span></th>';
+}
+function doSortSv(col){
+  if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=1;}
+  renderSavingsList();
+}
+window.doSortSv=doSortSv;
 function renderSavingsList(){
   var all=db.savings||[];
-  var rows=all.map(buildSavingsRow).join('');
+  var sorted=sortSavings(all);
+  var rows=sorted.map(buildSavingsRow).join('');
   document.getElementById('app').innerHTML=
     '<div class="stats-bar stats-bar-3">'
     +sCard('儲蓄險客戶',all.length,'位')+sCard('台幣件數',all.filter(function(s){return s.currency==='台幣';}).length,'件')+sCard('美金件數',all.filter(function(s){return s.currency==='美金';}).length,'件')
@@ -697,8 +750,10 @@ function renderSavingsList(){
     +'<div style="display:flex;gap:8px"><input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)">'
     +'<button class="btn-outline" onclick="openSavingsModal(null)">＋ 新增儲蓄險</button></div></div>'
     +'<div class="table-wrap"><table><thead><tr>'
-    +'<th>客戶姓名</th><th>保險公司</th><th>商品名稱</th><th>幣別</th>'
-    +'<th>簽約日期</th><th>投保年期</th><th>目前年度</th><th>保費</th><th>累計保費</th><th>操作</th>'
+    +thSortSv('sv-name','客戶姓名')+thSortSv('sv-company','保險公司')+thSortSv('sv-product','商品名稱')
+    +thSortSv('sv-currency','幣別')+thSortSv('sv-signDate','簽約日期')+thSortSv('sv-years','投保年期')
+    +thSortSv('sv-premium','保費')+thSortSv('sv-pyear','目前年度')+thSortSv('sv-cum','累計保費')
+    +'<th>操作</th>'
     +'</tr></thead><tbody id="list-tbody">'+rows+'</tbody></table>'
     +(all.length===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無儲蓄險資料</div></div>':'')
     +'</div>';
