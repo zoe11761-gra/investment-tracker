@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>草草投資型客戶管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Noto+Serif+TC:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d0f;--surface:#141416;--surface2:#1c1c1f;--surface3:#242428;
+  --border:#2a2a2e;--gold:#c9a84c;--gold-light:#e8c97a;--gold-dim:rgba(201,168,76,.15);
+  --text:#e8e6e1;--text-dim:#8a8880;--text-muted:#4a4a50;
+  --green:#4caf7a;--red:#e05c5c;--blue:#5c9ae0;
+  --radius:10px;--radius-sm:6px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);--shadow-gold:0 0 30px rgba(201,168,76,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Serif TC',serif;min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(201,168,76,.04) 0%,transparent 60%),
+  radial-gradient(ellipse at 80% 100%,rgba(92,154,224,.03) 0%,transparent 60%);}
+.header{border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;
+  justify-content:space-between;background:rgba(13,13,15,.97);backdrop-filter:blur(10px);
+  position:sticky;top:0;z-index:100;}
+.header-brand{display:flex;align-items:center;gap:12px;}
+.header-icon{width:34px;height:34px;border:1px solid var(--gold);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;font-weight:bold;}
+.header-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold-light);letter-spacing:.3px;}
+.header-sub{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:1px;margin-top:1px;}
+.btn-gold{background:var(--gold);color:#0d0d0f;border:none;padding:8px 18px;border-radius:var(--radius-sm);
+  font-family:'Noto Serif TC',serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn-gold:hover{background:var(--gold-light);transform:translateY(-1px);}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);display:inline-block;margin-right:4px;transition:background .3s;}
+.sync-dot.syncing{background:var(--gold);animation:pulse .8s infinite;}
+.sync-dot.ok{background:var(--green);}
+.sync-dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+.main-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);
+  position:sticky;top:67px;z-index:90;}
+.main-tab{padding:13px 24px;font-size:13px;color:var(--text-muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s;font-family:'Noto Serif TC',serif;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.main-tab:hover{color:var(--text-dim);}
+.main-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tab-count{background:var(--surface3);border:1px solid var(--border);border-radius:10px;
+  padding:1px 7px;font-size:10px;font-family:'DM Mono',monospace;}
+.main-tab.active .tab-count{background:var(--gold-dim);border-color:rgba(201,168,76,.3);color:var(--gold);}
+.main{padding:22px 32px;max-width:1600px;margin:0 auto;}
+.stats-bar{display:grid;gap:12px;margin-bottom:22px;}
+.stats-bar-3{grid-template-columns:repeat(3,1fr);}
+.stats-bar-4{grid-template-columns:repeat(4,1fr);}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 18px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold),transparent);opacity:.5;}
+.stat-label{font-size:10px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;}
+.stat-value-row{display:flex;align-items:baseline;gap:5px;margin-top:3px;}
+.stat-value{font-size:20px;color:var(--gold-light);font-family:'Playfair Display',serif;}
+.stat-sub-inline{font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);
+  display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';width:3px;height:16px;background:var(--gold);border-radius:2px;}
+.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:7px 13px;color:var(--text);font-family:'Noto Serif TC',serif;font-size:13px;
+  width:200px;outline:none;transition:border-color .2s;}
+.search-box:focus{border-color:var(--gold);}
+.search-box::placeholder{color:var(--text-muted);}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--surface2);border-bottom:1px solid var(--border);}
+th{padding:10px 13px;font-size:10px;font-family:'DM Mono',monospace;letter-spacing:1px;
+  color:var(--text-muted);text-align:left;font-weight:400;text-transform:uppercase;white-space:nowrap;
+  cursor:pointer;user-select:none;transition:color .15s;}
+th:hover{color:var(--text-dim);}
+th.sorted-asc,th.sorted-desc{color:var(--gold);}
+th .sort-icon{margin-left:4px;opacity:.5;font-size:9px;}
+th.sorted-asc .sort-icon,th.sorted-desc .sort-icon{opacity:1;}
+tbody tr{border-bottom:1px solid rgba(42,42,46,.5);transition:background .15s;cursor:pointer;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(201,168,76,.04);}
+td{padding:12px 13px;font-size:13px;vertical-align:middle;}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;
+  font-family:'DM Mono',monospace;letter-spacing:.5px;white-space:nowrap;}
+.tag-monthly{background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+.tag-regular{background:rgba(92,154,224,.12);color:var(--blue);border:1px solid rgba(92,154,224,.2);}
+.tag-savings{background:rgba(76,175,122,.1);color:var(--green);border:1px solid rgba(76,175,122,.25);}
+.tag-company{background:var(--surface3);color:var(--text-dim);border:1px solid var(--border);}
+.tag-usd{background:rgba(76,175,122,.1);color:var(--green);border:1px solid rgba(76,175,122,.25);}
+.tag-twd{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
+.tag-paused{background:rgba(224,92,92,.1);color:var(--red);border:1px solid rgba(224,92,92,.2);}
+.amount{font-family:'DM Mono',monospace;}
+.pct-pos{color:var(--green);}
+.pct-neg{color:var(--red);}
+.pct-neu{color:var(--text-dim);}
+.action-btns{display:flex;gap:5px;}
+.btn-sm{padding:4px 10px;border-radius:var(--radius-sm);font-size:11px;cursor:pointer;
+  border:1px solid;font-family:'DM Mono',monospace;transition:all .15s;white-space:nowrap;}
+.btn-view{background:transparent;border-color:var(--gold);color:var(--gold);}
+.btn-view:hover{background:var(--gold-dim);}
+.btn-edit{background:transparent;border-color:var(--border);color:var(--text-dim);}
+.btn-edit:hover{border-color:var(--text-dim);color:var(--text);}
+.btn-del{background:transparent;border-color:transparent;color:var(--text-muted);}
+.btn-del:hover{color:var(--red);border-color:rgba(224,92,92,.3);}
+.btn-secondary{background:transparent;color:var(--text-dim);border:1px solid var(--border);
+  padding:8px 20px;border-radius:var(--radius-sm);font-family:'Noto Serif TC',serif;
+  font-size:13px;cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{border-color:var(--text-dim);color:var(--text);}
+.btn-outline{background:transparent;border:1px solid var(--gold);color:var(--gold);
+  padding:7px 14px;border-radius:var(--radius-sm);font-family:'Noto Serif TC',serif;
+  font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.btn-outline:hover{background:var(--gold-dim);}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--text-dim);
+  padding:6px 13px;border-radius:var(--radius-sm);font-family:'DM Mono',monospace;
+  font-size:11px;cursor:pointer;letter-spacing:.5px;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+.btn-back:hover{border-color:var(--text-dim);color:var(--text);}
+.breadcrumb{display:flex;align-items:center;gap:8px;margin-bottom:18px;
+  font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:.5px;}
+.breadcrumb span{cursor:pointer;}
+.breadcrumb span:hover{color:var(--gold);}
+.breadcrumb .sep,.breadcrumb .current{cursor:default;}
+.breadcrumb .current{color:var(--text-dim);}
+.detail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow-gold);}
+.detail-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:20px;align-items:stretch;}
+.detail-name{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold-light);}
+.detail-col1{display:flex;gap:18px;align-items:flex-start;}
+.detail-col1-info{display:flex;flex-direction:column;gap:8px;padding-top:4px;}
+.ds{padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  display:flex;flex-direction:column;justify-content:center;}
+.ds-label{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:1.2px;
+  text-transform:uppercase;margin-bottom:6px;}
+.ds-val{font-size:22px;color:var(--text);font-family:'Playfair Display',serif;line-height:1.2;}
+.ds-val.gold{color:var(--gold-light);}
+.ds-val.green{color:var(--green);}
+.targets-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:18px;}
+.targets-box-title{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;
+  letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
+.targets-chips{display:flex;flex-wrap:wrap;gap:7px;flex:1;}
+.target-chip{background:var(--surface3);border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;font-size:14px;font-family:'DM Mono',monospace;color:var(--text-dim);
+  display:flex;gap:8px;align-items:center;}
+.target-chip .cash{color:var(--green);}
+.target-chip .unit{color:var(--blue);}
+.target-chip .pct-num{color:var(--gold);}
+.timeline-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.timeline-head{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface2);
+  display:flex;align-items:center;justify-content:space-between;}
+.timeline-title{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;color:var(--text-dim);}
+.record-row{padding:14px 20px;border-bottom:1px solid rgba(42,42,46,.5);transition:background .15s;}
+.record-row:last-child{border-bottom:none;}
+.record-row:hover{background:rgba(201,168,76,.03);}
+.rec-grid-monthly{display:grid;grid-template-columns:150px 1fr 1fr 1fr auto;gap:16px;align-items:start;}
+.rec-grid-regular{display:grid;grid-template-columns:150px 1fr 1fr 1fr 1fr auto;gap:16px;align-items:start;}
+.rec-date{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);}
+.rec-label{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;}
+.rec-val{font-size:14px;color:var(--text);}
+.rec-sub{font-size:11px;margin-top:3px;}
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-muted);}
+.empty-icon{font-size:34px;margin-bottom:10px;opacity:.3;}
+.empty-text{font-size:13px;}
+.loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:999;gap:16px;}
+.loading-logo{font-family:'Playfair Display',serif;font-size:48px;color:var(--gold);opacity:.8;}
+.loading-text{font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:2px;}
+.loading-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
+.loading-bar-inner{height:100%;background:var(--gold);border-radius:1px;animation:loadbar 1.5s ease-in-out infinite;}
+@keyframes loadbar{0%{width:0;margin-left:0;}50%{width:60%;margin-left:20%;}100%{width:0;margin-left:100%;}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.77);backdrop-filter:blur(4px);
+  z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  width:100%;max-width:660px;max-height:92vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.6),var(--shadow-gold);animation:mIn .2s ease;}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:scale(1) translateY(0);}}
+.modal-header{padding:18px 24px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold-light);}
+.modal-close{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;transition:color .15s;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:18px 24px;}
+.modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.fsec{margin-bottom:18px;}
+.fsec-title{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:2px;color:var(--gold);
+  text-transform:uppercase;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid rgba(201,168,76,.15);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.ffull{grid-column:1/-1;}
+.fgroup{display:flex;flex-direction:column;gap:5px;}
+.flabel{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;letter-spacing:.5px;}
+.finput,.fselect,.ftextarea{background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:8px 11px;color:var(--text);font-family:'Noto Serif TC',serif;
+  font-size:13px;outline:none;transition:border-color .2s;width:100%;}
+.finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--gold);}
+.fselect option{background:var(--surface2);}
+.finput::placeholder{color:var(--text-muted);}
+.ftextarea{resize:vertical;min-height:56px;}
+.type-tabs{display:flex;gap:8px;margin-bottom:4px;}
+.type-tab{flex:1;padding:9px;text-align:center;border:1px solid var(--border);border-radius:var(--radius-sm);
+  cursor:pointer;font-size:12px;transition:all .2s;color:var(--text-dim);background:var(--surface2);}
+.type-tab.active.monthly{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
+.type-tab.active.regular{border-color:var(--blue);color:var(--blue);background:rgba(92,154,224,.1);}
+.trow{display:grid;gap:8px;align-items:center;margin-bottom:8px;}
+.trow-monthly{grid-template-columns:1fr 70px 70px 52px 28px;}
+.trow-regular{grid-template-columns:1fr 70px 28px;}
+.trow-sum{text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
+.trow-sum.ok{color:var(--green);}
+.trow-sum.over{color:var(--red);}
+.btn-icon{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);background:transparent;
+  color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .15s;}
+.btn-icon:hover{border-color:var(--red);color:var(--red);}
+.btn-icon.add{border-color:rgba(201,168,76,.3);color:var(--gold);}
+.btn-icon.add:hover{background:var(--gold-dim);border-color:var(--gold);}
+.checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.checkbox-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--gold);cursor:pointer;}
+.checkbox-label{font-size:13px;color:var(--text-dim);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+@media(max-width:1100px){
+  .detail-top{grid-template-columns:1fr 1fr;}
+  .rec-grid-monthly,.rec-grid-regular{grid-template-columns:1fr 1fr 1fr;}
+}
+@media(max-width:768px){
+  .main{padding:14px;}.header{padding:13px 16px;}
+  .stats-bar-3,.stats-bar-4{grid-template-columns:1fr 1fr;}
+  .detail-top{grid-template-columns:1fr;}.fgrid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-logo">草</div>
+  <div class="loading-text">連線 Firebase 中...</div>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+</div>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-icon">草</div>
+    <div>
+      <div class="header-title">草草投資型客戶管理系統</div>
+      <div class="header-sub">GRASS INVESTMENT CLIENT TRACKER</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div style="text-align:right;">
+      <div style="font-size:9px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:4px;justify-content:flex-end;">
+        <span class="sync-dot" id="sync-dot"></span>同步狀態
+      </div>
+      <div id="last-edited" style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:1px;">—</div>
+    </div>
+    <button class="btn-gold" id="btn-add-top" onclick="openClientModal(null)">＋ 新增客戶</button>
+  </div>
+</header>
+<div class="main-tabs">
+  <div class="main-tab active" id="tab-all" onclick="switchTab('all')">全部 <span class="tab-count" id="tc-all">0</span></div>
+  <div class="main-tab" id="tab-monthly" onclick="switchTab('monthly')">月配息保單 <span class="tab-count" id="tc-monthly">0</span></div>
+  <div class="main-tab" id="tab-regular" onclick="switchTab('regular')">定期定額 <span class="tab-count" id="tc-regular">0</span></div>
+  <div class="main-tab" id="tab-savings" onclick="switchTab('savings')">儲蓄險 <span class="tab-count" id="tc-savings">0</span></div>
+</div>
+<div class="main" id="app"></div>
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="overlayClick(event)">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyCc8tTh2r72EjJJE838dxlN79zJdpo44Gs",
+  authDomain: "investment-5a6a3.firebaseapp.com",
+  databaseURL: "https://investment-5a6a3-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "investment-5a6a3",
+  storageBucket: "investment-5a6a3.firebasestorage.app",
+  messagingSenderId: "694278160852",
+  appId: "1:694278160852:web:599f3b5a2c81bd2e80d641"
+};
+
+var app = initializeApp(firebaseConfig);
+var database = getDatabase(app);
+var dbRef = ref(database, 'grassTracker');
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+var COMPANIES=['法巴人壽','台灣人壽','安聯人壽','富邦人壽'];
+var SAVINGS_COMPANIES=['富邦人壽','全球人壽','保誠人壽'];
+var PRODUCTS=['真鑽發發','10來旺','金采年華','吉利發發','UNOB','UNAB'];
+var CURRENCIES=['台幣','美金'];
+
+var DEMO={
+  clients:[
+    {id:'d1',type:'monthly',name:'陳雅婷',company:'法巴人壽',productName:'真鑽發發',currency:'美金',signDate:'2022-03-15',entryPrincipal:100000,targets:[{name:'全球股票型基金',cashPct:'20',unitPct:'80'}],records:[{id:'r1a',reviewDate:'2022-06-15',principal:98500,cumInterest:1200,targets:[{name:'全球股票型基金',cashPct:'20',unitPct:'80'}],note:'進場三個月，市場震盪'},{id:'r1b',reviewDate:'2022-12-20',principal:103000,cumInterest:3800,targets:[{name:'全球股票型基金',cashPct:'20',unitPct:'80'}],note:'下半年回穩'},{id:'r1c',reviewDate:'2023-06-10',principal:110500,cumInterest:7200,targets:[{name:'全球股票型基金',cashPct:'20',unitPct:'80'}],note:'AI帶動本金成長'},{id:'r1d',reviewDate:'2024-02-01',principal:118000,cumInterest:11500,targets:[{name:'全球股票型基金',cashPct:'25',unitPct:'75'}],note:'調整配置'},{id:'r1e',reviewDate:'2024-09-15',principal:124000,cumInterest:15800,targets:[{name:'全球股票型基金',cashPct:'25',unitPct:'75'}],note:'持續成長'}]},
+    {id:'d2',type:'monthly',name:'林建宏',company:'安聯人壽',productName:'UNOB',currency:'台幣',signDate:'2021-08-01',entryPrincipal:5000000,targets:[{name:'安聯收益成長',cashPct:'40',unitPct:'60'},{name:'美國高收益債',cashPct:'0',unitPct:'100'}],records:[{id:'r2a',reviewDate:'2022-02-14',principal:4820000,cumInterest:85000,targets:[{name:'安聯收益成長',cashPct:'40',unitPct:'60'},{name:'美國高收益債',cashPct:'0',unitPct:'100'}],note:'市場下跌'},{id:'r2b',reviewDate:'2023-01-10',principal:5120000,cumInterest:210000,targets:[{name:'安聯收益成長',cashPct:'40',unitPct:'60'},{name:'美國高收益債',cashPct:'0',unitPct:'100'}],note:'回穩'},{id:'r2c',reviewDate:'2024-06-01',principal:5580000,cumInterest:380000,targets:[{name:'安聯收益成長',cashPct:'40',unitPct:'60'},{name:'美國高收益債',cashPct:'0',unitPct:'100'}],note:'穩定成長中'}]},
+    {id:'d3',type:'regular',name:'張美玲',company:'台灣人壽',productName:'金采年華',currency:'台幣',signDate:'2023-01-10',targetPremium:12000,payFreq:'月繳',isPaused:false,targets:[{name:'台灣50 ETF',pct:'60'},{name:'全球科技基金',pct:'40'}],records:[{id:'r3a',reviewDate:'2023-06-30',principal:73800,cumPaid:72000,targets:[{name:'台灣50 ETF',pct:'60'},{name:'全球科技基金',pct:'40'}],note:'半年整，略有獲利'},{id:'r3b',reviewDate:'2023-12-31',principal:148500,cumPaid:144000,targets:[{name:'台灣50 ETF',pct:'60'},{name:'全球科技基金',pct:'40'}],note:'一年整'},{id:'r3c',reviewDate:'2024-06-30',principal:183000,cumPaid:216000,targets:[{name:'台灣50 ETF',pct:'70'},{name:'全球科技基金',pct:'30'}],note:'調高台灣ETF比例'}]},
+    {id:'d4',type:'regular',name:'王志偉',company:'法巴人壽',productName:'吉利發發',currency:'美金',signDate:'2023-07-01',targetPremium:3000,payFreq:'月繳',isPaused:true,targets:[{name:'MSCI世界指數',pct:'100'}],records:[{id:'r4a',reviewDate:'2024-01-05',principal:17200,cumPaid:18000,targets:[{name:'MSCI世界指數',pct:'100'}],note:'半年'},{id:'r4b',reviewDate:'2024-07-01',principal:37800,cumPaid:36000,targets:[{name:'MSCI世界指數',pct:'100'}],note:'帳面超越已繳'}]}
+  ],
+  savings:[
+    {id:'s1',name:'李淑芬',company:'富邦人壽',productName:'富邦吉利終身',currency:'台幣',signDate:'2020-06-01',policyYears:20,premium:48000,payFreq:'年繳'},
+    {id:'s2',name:'陳建志',company:'全球人壽',productName:'全球增額壽險',currency:'美金',signDate:'2019-03-15',policyYears:6,premium:2400,payFreq:'年繳'},
+    {id:'s3',name:'林雅琪',company:'保誠人壽',productName:'保誠鑫傳家',currency:'台幣',signDate:'2022-09-01',policyYears:10,premium:120000,payFreq:'年繳'}
+  ]
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+var db = {clients:[], savings:[]};
+var currentTab='all';
+var viewMode='list';
+var currentId=null;
+var mType='monthly';
+var mTargets=[];
+var rTargets=[];
+var sortCol=null;
+var sortDir=1;
+var fbLoaded=false;
+
+// ─── FIREBASE SYNC ────────────────────────────────────────────────────────────
+function setSyncStatus(status){
+  var dot=document.getElementById('sync-dot');
+  if(!dot)return;
+  dot.className='sync-dot '+status;
+}
+function saveDB(){
+  setSyncStatus('syncing');
+  db.lastEdited=new Date().toISOString();
+  set(dbRef, db).then(function(){
+    setSyncStatus('ok');
+    updateLastEdited();
+    setTimeout(function(){setSyncStatus('ok');},2000);
+  }).catch(function(err){
+    setSyncStatus('err');
+    console.error('Firebase save error:',err);
+  });
+}
+function updateLastEdited(){
+  var el=document.getElementById('last-edited');
+  if(!el||!db.lastEdited){if(el)el.textContent='—';return;}
+  var d=new Date(db.lastEdited);
+  var pad=function(n){return n<10?'0'+n:String(n);};
+  el.textContent=d.getFullYear()+'/'+pad(d.getMonth()+1)+'/'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+// ─── INIT: listen to Firebase ─────────────────────────────────────────────────
+onValue(dbRef, function(snapshot){
+  var data=snapshot.val();
+  if(data){
+    db=data;
+    if(!db.clients)db.clients=[];
+    if(!db.savings)db.savings=[];
+  } else {
+    // First time: write demo data
+    db=JSON.parse(JSON.stringify(DEMO));
+    set(dbRef, db);
+  }
+  if(!fbLoaded){
+    fbLoaded=true;
+    document.getElementById('loading-screen').style.display='none';
+    setSyncStatus('ok');
+    switchTab('all');
+    updateLastEdited();
+  } else {
+    // Real-time update from another device
+    render();
+    updateTabCounts();
+    updateLastEdited();
+  }
+}, function(error){
+  console.error('Firebase read error:', error);
+  setSyncStatus('err');
+  // Fallback to demo data if Firebase fails
+  if(!fbLoaded){
+    fbLoaded=true;
+    db=JSON.parse(JSON.stringify(DEMO));
+    document.getElementById('loading-screen').style.display='none';
+    switchTab('all');
+  }
+});
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function fmtN(n){
+  var num=parseFloat(n);
+  if(isNaN(num))return'—';
+  var s=new Intl.NumberFormat('zh-TW',{maximumFractionDigits:0}).format(Math.abs(num));
+  return(num<0?'-':'')+'$'+s;
+}
+function fmtM(n){
+  var num=parseFloat(n)||0;
+  if(num>=1e8)return(num/1e8).toFixed(1)+'億';
+  if(num>=1e4)return(num/1e4).toFixed(1)+'萬';
+  return String(Math.round(num));
+}
+function calcPct(cur,base){
+  var c=parseFloat(cur)||0,b=parseFloat(base)||0;
+  if(!b)return null;
+  return(c-b)/b*100;
+}
+function pctSpan(pct){
+  if(pct===null)return'<span style="color:var(--text-muted)">—</span>';
+  var cls=pct>0?'pct-pos':pct<0?'pct-neg':'pct-neu';
+  var arrow=pct>0?'▲ ':pct<0?'▼ ':'';
+  return'<span class="'+cls+'">'+arrow+(pct>0?'+':'')+pct.toFixed(2)+'%</span>';
+}
+function thSort(col,label){
+  var sc=sortCol===col?'sorted-'+(sortDir===1?'asc':'desc'):'';
+  var arrow=sortCol===col?(sortDir===1?' ↑':' ↓'):' ↕';
+  return'<th class="'+sc+'" onclick="doSort(\''+col+'\')">'+label+'<span class="sort-icon">'+arrow+'</span></th>';
+}
+function sCard(label,val,sub){
+  return'<div class="stat-card"><div class="stat-label">'+label+'</div>'
+    +'<div class="stat-value-row"><span class="stat-value">'+val+'</span>'
+    +'<span class="stat-sub-inline">'+sub+'</span></div></div>';
+}
+function calcPolicyYear(signDate){
+  if(!signDate)return null;
+  var sign=new Date(signDate),now=new Date();
+  var y=now.getFullYear()-sign.getFullYear();
+  var m=now.getMonth()-sign.getMonth();
+  if(m<0||(m===0&&now.getDate()<sign.getDate()))y--;
+  return Math.max(1,y+1);
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab){
+  currentTab=tab;viewMode='list';currentId=null;sortCol=null;sortDir=1;
+  ['all','monthly','regular','savings'].forEach(function(t){
+    document.getElementById('tab-'+t).className='main-tab'+(tab===t?' active':'');
+  });
+  var btn=document.getElementById('btn-add-top');
+  if(tab==='savings'){btn.style.display='none';}
+  else{
+    btn.style.display='inline-flex';
+    btn.textContent=tab==='monthly'?'＋ 新增月配息客戶':tab==='regular'?'＋ 新增定期定額客戶':'＋ 新增客戶';
+  }
+  render();
+}
+window.switchTab=switchTab;
+
+function updateTabCounts(){
+  document.getElementById('tc-all').textContent=db.clients.length;
+  document.getElementById('tc-monthly').textContent=db.clients.filter(function(c){return c.type==='monthly';}).length;
+  document.getElementById('tc-regular').textContent=db.clients.filter(function(c){return c.type==='regular';}).length;
+  document.getElementById('tc-savings').textContent=(db.savings||[]).length;
+}
+function doSort(col){
+  if(sortCol===col)sortDir*=-1; else{sortCol=col;sortDir=1;}
+  renderList();
+}
+window.doSort=doSort;
+
+function sortClients(arr){
+  if(!sortCol)return arr;
+  return arr.slice().sort(function(a,b){
+    var av,bv;
+    if(sortCol==='name'){av=a.name;bv=b.name;}
+    else if(sortCol==='company'){av=a.company;bv=b.company;}
+    else if(sortCol==='product'){av=a.productName||'';bv=b.productName||'';}
+    else if(sortCol==='currency'){av=a.currency;bv=b.currency;}
+    else if(sortCol==='signDate'){av=a.signDate||'';bv=b.signDate||'';}
+    else if(sortCol==='entryP'){av=parseFloat(a.entryPrincipal)||0;bv=parseFloat(b.entryPrincipal)||0;}
+    else if(sortCol==='tp'){av=parseFloat(a.targetPremium)||0;bv=parseFloat(b.targetPremium)||0;}
+    else if(sortCol==='latestP'){
+      var la=a.records&&a.records.length?a.records[a.records.length-1]:null;
+      var lb=b.records&&b.records.length?b.records[b.records.length-1]:null;
+      av=la?parseFloat(la.principal)||0:0;bv=lb?parseFloat(lb.principal)||0:0;
+    }
+    else if(sortCol==='pct'){
+      var la=a.records&&a.records.length?a.records[a.records.length-1]:null;
+      var lb=b.records&&b.records.length?b.records[b.records.length-1]:null;
+      var ba=a.type==='monthly'?parseFloat(a.entryPrincipal)||0:(la?parseFloat(la.cumPaid)||0:0);
+      var bb=b.type==='monthly'?parseFloat(b.entryPrincipal)||0:(lb?parseFloat(lb.cumPaid)||0:0);
+      av=la?calcPct(la.principal,ba)||0:0;bv=lb?calcPct(lb.principal,bb)||0:0;
+    }
+    else if(sortCol==='cumInt'){
+      var la=a.records&&a.records.length?a.records[a.records.length-1]:null;
+      var lb=b.records&&b.records.length?b.records[b.records.length-1]:null;
+      av=la?parseFloat(la.cumInterest)||0:0;bv=lb?parseFloat(lb.cumInterest)||0:0;
+    }
+    else if(sortCol==='cumPaid'){
+      var la=a.records&&a.records.length?a.records[a.records.length-1]:null;
+      var lb=b.records&&b.records.length?b.records[b.records.length-1]:null;
+      av=la?parseFloat(la.cumPaid)||0:0;bv=lb?parseFloat(lb.cumPaid)||0:0;
+    }
+    else{av='';bv='';}
+    if(typeof av==='string')return av.localeCompare(bv)*sortDir;
+    return(av-bv)*sortDir;
+  });
+}
+
+function render(){updateTabCounts();if(viewMode==='list')renderList();else renderDetail();}
+function renderList(){
+  if(currentTab==='all')renderAllList();
+  else if(currentTab==='monthly')renderMonthlyList();
+  else if(currentTab==='regular')renderRegularList();
+  else renderSavingsList();
+}
+
+// ─── ALL LIST ─────────────────────────────────────────────────────────────────
+function buildAllRow(c){
+  var last=c.records&&c.records.length?c.records[c.records.length-1]:null;
+  var isM=c.type==='monthly';
+  var latestP=last?parseFloat(last.principal)||0:0;
+  var base=isM?parseFloat(c.entryPrincipal)||0:(last?parseFloat(last.cumPaid)||0:0);
+  var pct=last?calcPct(latestP,base):null;
+  var extra=isM?(last?fmtN(parseFloat(last.cumInterest)||0):'—'):(last?fmtN(parseFloat(last.cumPaid)||0):'—');
+  return'<tr onclick="goDetail(\''+c.id+'\')">'
+    +'<td style="font-weight:500">'+c.name+(c.isPaused?' <span class="tag tag-paused">緩繳</span>':'')+'</td>'
+    +'<td><span class="tag '+(isM?'tag-monthly':'tag-regular')+'">'+(isM?'月配息':'定期定額')+'</span></td>'
+    +'<td><span class="tag tag-company">'+c.company+'</span></td>'
+    +'<td style="color:var(--text-dim);font-size:12px">'+c.productName+'</td>'
+    +'<td><span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span></td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(c.signDate||'—')+'</td>'
+    +'<td class="amount">'+(last?fmtN(latestP):'<span style="color:var(--text-muted)">—</span>')+'</td>'
+    +'<td>'+pctSpan(pct)+'</td>'
+    +'<td class="amount" style="color:var(--text-dim)">'+extra+'</td>'
+    +'<td onclick="event.stopPropagation()"><div class="action-btns">'
+    +'<button class="btn-sm btn-view" onclick="goDetail(\''+c.id+'\')">查看</button>'
+    +'<button class="btn-sm btn-edit" onclick="openClientModal(\''+c.id+'\')">編輯</button>'
+    +'<button class="btn-sm btn-del" onclick="deleteClient(\''+c.id+'\')">✕</button>'
+    +'</div></td></tr>';
+}
+function renderAllList(){
+  var all=db.clients;
+  var totalP=0;
+  all.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l)totalP+=parseFloat(l.principal)||0;});
+  var rows=sortClients(all).map(buildAllRow).join('');
+  document.getElementById('app').innerHTML=
+    '<div class="stats-bar stats-bar-4">'
+    +sCard('總客戶',all.length,'位')
+    +sCard('月配息',all.filter(function(c){return c.type==='monthly';}).length,'件')
+    +sCard('定期定額',all.filter(function(c){return c.type==='regular';}).length,'件')
+    +sCard('緩繳中',all.filter(function(c){return c.isPaused;}).length,'件')
+    +'</div>'
+    +'<div class="section-header"><div class="section-title">全部客戶</div>'
+    +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
+    +'<div class="table-wrap"><table><thead><tr>'
+    +thSort('name','客戶姓名')+'<th>類型</th>'
+    +thSort('company','保險公司')+thSort('product','商品')+thSort('currency','幣別')+thSort('signDate','簽約日期')
+    +thSort('latestP','最新帳面')+thSort('pct','漲幅')+'<th>利息／已繳</th><th>操作</th>'
+    +'</tr></thead><tbody id="list-tbody">'+rows+'</tbody></table>'
+    +(all.length===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無客戶資料</div></div>':'')
+    +'</div>';
+}
+
+// ─── MONTHLY LIST ─────────────────────────────────────────────────────────────
+function buildMonthlyRow(c){
+  var last=c.records&&c.records.length?c.records[c.records.length-1]:null;
+  var initP=parseFloat(c.entryPrincipal)||0;
+  var latestP=last?parseFloat(last.principal)||0:0;
+  var pct=last?calcPct(latestP,initP):null;
+  var cumInt=last?parseFloat(last.cumInterest)||0:0;
+  return'<tr onclick="goDetail(\''+c.id+'\')">'
+    +'<td style="font-weight:500">'+c.name+'</td>'
+    +'<td><span class="tag tag-company">'+c.company+'</span></td>'
+    +'<td style="color:var(--text-dim);font-size:12px">'+c.productName+'</td>'
+    +'<td><span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span></td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(c.signDate||'—')+'</td>'
+    +'<td class="amount">'+fmtN(initP)+'</td>'
+    +'<td class="amount">'+(last?fmtN(latestP):'<span style="color:var(--text-muted)">—</span>')+'</td>'
+    +'<td>'+pctSpan(pct)+'</td>'
+    +'<td class="amount" style="color:var(--green)">'+(cumInt>0?fmtN(cumInt):'—')+'</td>'
+    +'<td onclick="event.stopPropagation()"><div class="action-btns">'
+    +'<button class="btn-sm btn-view" onclick="goDetail(\''+c.id+'\')">查看</button>'
+    +'<button class="btn-sm btn-edit" onclick="openClientModal(\''+c.id+'\')">編輯</button>'
+    +'<button class="btn-sm btn-del" onclick="deleteClient(\''+c.id+'\')">✕</button>'
+    +'</div></td></tr>';
+}
+function renderMonthlyList(){
+  var all=db.clients.filter(function(c){return c.type==='monthly';});
+  var totalP=0,totalInt=0;
+  all.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l){totalP+=parseFloat(l.principal)||0;totalInt+=parseFloat(l.cumInterest)||0;}});
+  var rows=sortClients(all).map(buildMonthlyRow).join('');
+  document.getElementById('app').innerHTML=
+    '<div class="stats-bar stats-bar-3">'
+    +sCard('月配息客戶',all.length,'位')+sCard('最新帳面合計',fmtM(totalP),'元')+sCard('累計利息合計',fmtM(totalInt),'元')
+    +'</div>'
+    +'<div class="section-header"><div class="section-title">月配息保單客戶</div>'
+    +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
+    +'<div class="table-wrap"><table><thead><tr>'
+    +thSort('name','客戶姓名')+thSort('company','保險公司')+thSort('product','商品')
+    +thSort('currency','幣別')+thSort('signDate','簽約日期')
+    +thSort('entryP','進場本金')+thSort('latestP','最新帳面')+thSort('pct','整體漲幅')+thSort('cumInt','累計已領利息')
+    +'<th>操作</th></tr></thead><tbody id="list-tbody">'+rows+'</tbody></table>'
+    +(all.length===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無月配息客戶</div></div>':'')
+    +'</div>';
+}
+
+// ─── REGULAR LIST ─────────────────────────────────────────────────────────────
+function buildRegularRow(c){
+  var last=c.records&&c.records.length?c.records[c.records.length-1]:null;
+  var tp=parseFloat(c.targetPremium)||0;
+  var latestP=last?parseFloat(last.principal)||0:0;
+  var cumPaid=last?parseFloat(last.cumPaid)||0:0;
+  var pct=last?calcPct(latestP,cumPaid):null;
+  return'<tr onclick="goDetail(\''+c.id+'\')">'
+    +'<td style="font-weight:500">'+c.name+(c.isPaused?' <span class="tag tag-paused">緩繳</span>':'')+'</td>'
+    +'<td><span class="tag tag-company">'+c.company+'</span></td>'
+    +'<td style="color:var(--text-dim);font-size:12px">'+c.productName+'</td>'
+    +'<td><span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span></td>'
+    +'<td><span class="tag tag-company">'+(c.payFreq||'月繳')+'</span></td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(c.signDate||'—')+'</td>'
+    +'<td class="amount">'+fmtN(tp)+'/期</td>'
+    +'<td class="amount">'+(cumPaid>0?fmtN(cumPaid):'—')+'</td>'
+    +'<td class="amount">'+(last?fmtN(latestP):'<span style="color:var(--text-muted)">—</span>')+'</td>'
+    +'<td>'+pctSpan(pct)+'</td>'
+    +'<td onclick="event.stopPropagation()"><div class="action-btns">'
+    +'<button class="btn-sm btn-view" onclick="goDetail(\''+c.id+'\')">查看</button>'
+    +'<button class="btn-sm btn-edit" onclick="openClientModal(\''+c.id+'\')">編輯</button>'
+    +'<button class="btn-sm btn-del" onclick="deleteClient(\''+c.id+'\')">✕</button>'
+    +'</div></td></tr>';
+}
+function renderRegularList(){
+  var all=db.clients.filter(function(c){return c.type==='regular';});
+  var totalP=0,totalPaid=0;
+  all.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l){totalP+=parseFloat(l.principal)||0;totalPaid+=parseFloat(l.cumPaid)||0;}});
+  var rows=sortClients(all).map(buildRegularRow).join('');
+  document.getElementById('app').innerHTML=
+    '<div class="stats-bar stats-bar-4">'
+    +sCard('定期定額客戶',all.length,'位')+sCard('最新帳面合計',fmtM(totalP),'元')+sCard('累計已繳合計',fmtM(totalPaid),'元')+sCard('緩繳中',all.filter(function(c){return c.isPaused;}).length,'件')
+    +'</div>'
+    +'<div class="section-header"><div class="section-title">定期定額客戶</div>'
+    +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
+    +'<div class="table-wrap"><table><thead><tr>'
+    +thSort('name','客戶姓名')+thSort('company','保險公司')+thSort('product','商品')
+    +thSort('currency','幣別')+'<th>頻率</th>'+thSort('signDate','簽約日期')
+    +thSort('tp','目標保費/期')+thSort('cumPaid','累計已繳')+thSort('latestP','最新帳面')+thSort('pct','漲幅（vs已繳）')
+    +'<th>操作</th></tr></thead><tbody id="list-tbody">'+rows+'</tbody></table>'
+    +(all.length===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無定期定額客戶</div></div>':'')
+    +'</div>';
+}
+
+// ─── SAVINGS LIST ─────────────────────────────────────────────────────────────
+function buildSavingsRow(s){
+  var py=calcPolicyYear(s.signDate);
+  var cum=py&&s.premium?parseFloat(s.premium)*py:0;
+  return'<tr>'
+    +'<td style="font-weight:500">'+s.name+'</td>'
+    +'<td><span class="tag tag-company">'+s.company+'</span></td>'
+    +'<td style="color:var(--text-dim);font-size:12px">'+(s.productName||'—')+'</td>'
+    +'<td><span class="tag '+(s.currency==='美金'?'tag-usd':'tag-twd')+'">'+s.currency+'</span></td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.signDate||'—')+'</td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(s.policyYears?s.policyYears+'年':'—')+'</td>'
+    +'<td style="font-family:\'DM Mono\',monospace;font-size:13px;color:var(--gold)">'+(py?'第 '+py+' 年':'—')+'</td>'
+    +'<td class="amount">'+fmtN(s.premium)+'/'+(s.payFreq||'年繳')+'</td>'
+    +'<td class="amount" style="color:var(--gold-light)">'+(cum>0?fmtN(cum):'—')+'</td>'
+    +'<td><div class="action-btns">'
+    +'<button class="btn-sm btn-edit" onclick="openSavingsModal(\''+s.id+'\')">編輯</button>'
+    +'<button class="btn-sm btn-del" onclick="deleteSavings(\''+s.id+'\')">✕</button>'
+    +'</div></td></tr>';
+}
+function renderSavingsList(){
+  var all=db.savings||[];
+  var rows=all.map(buildSavingsRow).join('');
+  document.getElementById('app').innerHTML=
+    '<div class="stats-bar stats-bar-3">'
+    +sCard('儲蓄險客戶',all.length,'位')+sCard('台幣件數',all.filter(function(s){return s.currency==='台幣';}).length,'件')+sCard('美金件數',all.filter(function(s){return s.currency==='美金';}).length,'件')
+    +'</div>'
+    +'<div class="section-header"><div class="section-title">儲蓄險客戶</div>'
+    +'<div style="display:flex;gap:8px"><input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)">'
+    +'<button class="btn-outline" onclick="openSavingsModal(null)">＋ 新增儲蓄險</button></div></div>'
+    +'<div class="table-wrap"><table><thead><tr>'
+    +'<th>客戶姓名</th><th>保險公司</th><th>商品名稱</th><th>幣別</th>'
+    +'<th>簽約日期</th><th>投保年期</th><th>目前年度</th><th>保費</th><th>累計保費</th><th>操作</th>'
+    +'</tr></thead><tbody id="list-tbody">'+rows+'</tbody></table>'
+    +(all.length===0?'<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無儲蓄險資料</div></div>':'')
+    +'</div>';
+}
+
+function filterList(q){
+  if(currentTab==='savings'){
+    var f=(db.savings||[]).filter(function(s){return s.name.includes(q)||s.company.includes(q)||(s.productName||'').includes(q);});
+    document.getElementById('list-tbody').innerHTML=f.map(buildSavingsRow).join('');return;
+  }
+  var pool=currentTab==='all'?db.clients:db.clients.filter(function(c){return c.type===currentTab;});
+  var f=pool.filter(function(c){return c.name.includes(q)||(c.productName||'').includes(q)||c.company.includes(q);});
+  var builder=currentTab==='all'?buildAllRow:currentTab==='monthly'?buildMonthlyRow:buildRegularRow;
+  document.getElementById('list-tbody').innerHTML=sortClients(f).map(builder).join('');
+}
+window.filterList=filterList;
+
+// ─── DETAIL ───────────────────────────────────────────────────────────────────
+function makeDetailCol1(c,typeName,typeTagClass){
+  var py=calcPolicyYear(c.signDate);
+  return'<div class="detail-col1"><div><div class="detail-name">'+c.name+'</div></div>'
+    +'<div class="detail-col1-info">'
+    +'<div style="font-size:14px;color:var(--text-dim)">'+c.company+'　'+c.productName+'</div>'
+    +'<div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center">'
+    +'<span class="tag '+typeTagClass+'">'+typeName+'</span>'
+    +'<span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span>'
+    +(c.payFreq?'<span class="tag tag-company">'+c.payFreq+'</span>':'')
+    +(c.isPaused?'<span class="tag tag-paused">緩繳中</span>':'')
+    +'</div>'
+    +(c.signDate?'<div style="font-size:13px;color:var(--text-dim);font-family:\'DM Mono\',monospace">簽約 '+c.signDate+(py!==null?'　<span style="color:var(--gold)">第 '+py+' 年度</span>':'')+'</div>':'')
+    +'</div></div>';
+}
+
+function renderDetail(){
+  var c=db.clients.find(function(x){return x.id===currentId;});
+  if(!c){viewMode='list';render();return;}
+  if(c.type==='monthly')renderMonthlyDetail(c);
+  else renderRegularDetail(c);
+}
+
+function renderMonthlyDetail(c){
+  var records=c.records||[];
+  var initP=parseFloat(c.entryPrincipal)||0;
+  var last=records.length?records[records.length-1]:null;
+  var latestP=last?parseFloat(last.principal)||0:0;
+  var cumInt=last?parseFloat(last.cumInterest)||0:0;
+  var pct=last?calcPct(latestP,initP):null;
+  var pctClass=pct===null?'':pct>=0?'pct-pos':'pct-neg';
+  var pctText=pct===null?'—':(pct>=0?'▲ +':'▼ ')+Math.abs(pct).toFixed(2)+'%';
+  var tgHtml='<div class="targets-box"><div class="targets-box-title">標的配置</div><div class="targets-chips">';
+  (c.targets||[]).forEach(function(t){tgHtml+='<div class="target-chip">'+t.name+'<span class="cash">現金 '+t.cashPct+'%</span><span class="unit">買回 '+t.unitPct+'%</span></div>';});
+  tgHtml+='</div></div>';
+  var detailCard='<div class="detail-card"><div class="detail-top">'
+    +makeDetailCol1(c,'月配息','tag-monthly')
+    +'<div class="ds"><div class="ds-label">進場本金</div><div class="ds-val gold">'+fmtN(initP)+'</div></div>'
+    +(last?'<div class="ds"><div class="ds-label">最新帳面</div><div class="ds-val">'+fmtN(latestP)+'</div>'+(pct!==null?'<div style="margin-top:5px;font-size:14px" class="'+pctClass+'">'+pctText+'</div>':'')+'</div>':'<div class="ds" style="opacity:.4"><div class="ds-label">最新帳面</div><div class="ds-val">—</div></div>')
+    +'<div class="ds"><div class="ds-label">累計已領利息</div><div class="ds-val green">'+fmtN(cumInt)+'</div></div>'
+    +'</div></div>';
+  var recHtml='';
+  if(!records.length){recHtml='<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無檢視紀錄</div></div>';}
+  else{
+    records.slice().reverse().forEach(function(r){
+      var p=parseFloat(r.principal)||0;
+      var rPct=calcPct(p,initP);
+      var ci=parseFloat(r.cumInterest)||0;
+      var pClass=rPct===null?'':rPct>=0?'pct-pos':'pct-neg';
+      var pTxt=rPct===null?'—':(rPct>=0?'▲ +':'▼ ')+Math.abs(rPct).toFixed(2)+'%';
+      recHtml+='<div class="record-row"><div class="rec-grid-monthly">'
+        +'<div><div class="rec-date">'+r.reviewDate+'</div></div>'
+        +'<div><div class="rec-label">帳面本金</div><div class="rec-val amount">'+fmtN(p)+'</div><div class="rec-sub '+pClass+'">'+pTxt+'</div></div>'
+        +'<div><div class="rec-label">累計已領利息</div><div class="rec-val amount" style="color:var(--green)">'+fmtN(ci)+'</div></div>'
+        +'<div><div class="rec-label">備註</div><div class="rec-val" style="font-size:12px;color:var(--text-muted)">'+(r.note||'—')+'</div></div>'
+        +'<div style="display:flex;gap:6px;align-items:flex-start;padding-top:18px">'
+        +'<button class="btn-sm btn-edit" onclick="openRecordModal(\''+r.id+'\')">編輯</button>'
+        +'<button class="btn-sm btn-del" onclick="deleteRecord(\''+r.id+'\')">✕</button>'
+        +'</div></div></div>';
+    });
+  }
+  document.getElementById('app').innerHTML=
+    '<div class="breadcrumb"><span onclick="goList()">月配息保單</span><span class="sep"> / </span><span class="current">'+c.name+'</span></div>'
+    +detailCard+tgHtml
+    +'<div class="section-header"><div class="section-title">檢視紀錄時間軸</div>'
+    +'<div style="display:flex;gap:8px"><button class="btn-back" onclick="goList()">← 返回</button>'
+    +'<button class="btn-outline" onclick="openRecordModal(null)">＋ 新增紀錄</button></div></div>'
+    +'<div class="timeline-wrap"><div class="timeline-head"><span class="timeline-title">REVIEW HISTORY · '+records.length+' 筆</span></div>'
+    +recHtml+'</div>';
+}
+
+function renderRegularDetail(c){
+  var records=c.records||[];
+  var tp=parseFloat(c.targetPremium)||0;
+  var last=records.length?records[records.length-1]:null;
+  var latestP=last?parseFloat(last.principal)||0:0;
+  var cumPaid=last?parseFloat(last.cumPaid)||0:0;
+  var pct=last?calcPct(latestP,cumPaid):null;
+  var pctClass=pct===null?'':pct>=0?'pct-pos':'pct-neg';
+  var pctText=pct===null?'—':(pct>=0?'▲ +':'▼ ')+Math.abs(pct).toFixed(2)+'%';
+  var tgTotal=0;
+  (c.targets||[]).forEach(function(t){tgTotal+=parseFloat(t.pct)||0;});
+  var sumColor=tgTotal===100?'var(--green)':tgTotal>100?'var(--red)':'var(--text-muted)';
+  var tgHtml='<div class="targets-box"><div class="targets-box-title">投資標的配置</div><div class="targets-chips">';
+  (c.targets||[]).forEach(function(t){tgHtml+='<div class="target-chip">'+t.name+'<span class="pct-num">'+t.pct+'%</span></div>';});
+  tgHtml+='<div class="target-chip" style="border-color:'+sumColor+';color:'+sumColor+'">合計 '+tgTotal+'%</div>';
+  tgHtml+='</div></div>';
+  var detailCard='<div class="detail-card"><div class="detail-top">'
+    +makeDetailCol1(c,'定期定額','tag-regular')
+    +'<div class="ds"><div class="ds-label">目標保費 / 期</div><div class="ds-val gold">'+fmtN(tp)+'</div></div>'
+    +(cumPaid?'<div class="ds"><div class="ds-label">累計已繳</div><div class="ds-val">'+fmtN(cumPaid)+'</div></div>':'<div class="ds" style="opacity:.4"><div class="ds-label">累計已繳</div><div class="ds-val">—</div></div>')
+    +(last?'<div class="ds"><div class="ds-label">帳戶金額</div><div class="ds-val">'+fmtN(latestP)+'</div>'+(pct!==null?'<div style="margin-top:5px;font-size:14px" class="'+pctClass+'">'+pctText+'</div>':'')+'</div>':'<div class="ds" style="opacity:.4"><div class="ds-label">帳戶金額</div><div class="ds-val">—</div></div>')
+    +'</div></div>';
+  var recHtml='';
+  if(!records.length){recHtml='<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無檢視紀錄</div></div>';}
+  else{
+    records.slice().reverse().forEach(function(r){
+      var p=parseFloat(r.principal)||0;
+      var cp=parseFloat(r.cumPaid)||0;
+      var rPct=calcPct(p,cp);
+      var pTxt=rPct===null?'—':(rPct>=0?'▲ +':'▼ ')+Math.abs(rPct).toFixed(2)+'%';
+      var pColor=rPct===null?'var(--text-dim)':rPct>=0?'var(--green)':'var(--red)';
+      recHtml+='<div class="record-row"><div class="rec-grid-regular">'
+        +'<div><div class="rec-date">'+r.reviewDate+'</div></div>'
+        +'<div><div class="rec-label">累計已繳</div><div class="rec-val amount">'+fmtN(cp)+'</div></div>'
+        +'<div><div class="rec-label">帳戶金額</div><div class="rec-val amount">'+fmtN(p)+'</div></div>'
+        +'<div><div class="rec-label">整體漲幅</div><div class="rec-val" style="font-size:16px;font-family:\'Playfair Display\',serif;color:'+pColor+'">'+pTxt+'</div></div>'
+        +'<div><div class="rec-label">備註</div><div class="rec-val" style="font-size:12px;color:var(--text-muted)">'+(r.note||'—')+'</div></div>'
+        +'<div style="display:flex;gap:6px;align-items:flex-start;padding-top:18px">'
+        +'<button class="btn-sm btn-edit" onclick="openRecordModal(\''+r.id+'\')">編輯</button>'
+        +'<button class="btn-sm btn-del" onclick="deleteRecord(\''+r.id+'\')">✕</button>'
+        +'</div></div></div>';
+    });
+  }
+  document.getElementById('app').innerHTML=
+    '<div class="breadcrumb"><span onclick="goList()">定期定額</span><span class="sep"> / </span><span class="current">'+c.name+'</span></div>'
+    +detailCard+tgHtml
+    +'<div class="section-header"><div class="section-title">檢視紀錄時間軸</div>'
+    +'<div style="display:flex;gap:8px"><button class="btn-back" onclick="goList()">← 返回</button>'
+    +'<button class="btn-outline" onclick="openRecordModal(null)">＋ 新增紀錄</button></div></div>'
+    +'<div class="timeline-wrap"><div class="timeline-head"><span class="timeline-title">REVIEW HISTORY · '+records.length+' 筆</span></div>'
+    +recHtml+'</div>';
+}
+
+// ─── CLIENT MODAL ─────────────────────────────────────────────────────────────
+function openClientModal(id){
+  var c=id?db.clients.find(function(x){return x.id===id;}):null;
+  if(c){mType=c.type;}
+  else{mType=(currentTab==='monthly'||currentTab==='regular')?currentTab:'monthly';}
+  mTargets=c&&c.targets?JSON.parse(JSON.stringify(c.targets))
+    :(mType==='monthly'?[{name:'',cashPct:'',unitPct:''}]:[{name:'',pct:''}]);
+  document.getElementById('modal-overlay').style.display='flex';
+  renderClientModal(c);
+}
+window.openClientModal=openClientModal;
+
+function renderClientModal(c){
+  var isEdit=!!c;
+  var pOpts=PRODUCTS.map(function(p){return'<option'+(c&&c.productName===p?' selected':'')+'>'+p+'</option>';}).join('');
+  var coOpts=COMPANIES.map(function(co){return'<option'+(c&&c.company===co?' selected':'')+'>'+co+'</option>';}).join('');
+  var curOpts=CURRENCIES.map(function(cu){return'<option'+(c&&c.currency===cu?' selected':'')+'>'+cu+'</option>';}).join('');
+  var extraFields='';
+  if(mType==='monthly'){
+    extraFields='<div class="fgroup"><label class="flabel">進場本金 *</label><input class="finput" id="f-ep" type="number" placeholder="0" value="'+(c&&c.entryPrincipal?c.entryPrincipal:'')+'"></div>';
+  } else {
+    extraFields='<div class="fgroup"><label class="flabel">目標保費（每期）*</label><input class="finput" id="f-tp" type="number" placeholder="0" value="'+(c&&c.targetPremium?c.targetPremium:'')+'"></div>'
+      +'<div class="fgroup"><label class="flabel">繳費頻率</label><select class="fselect" id="f-payFreq"><option'+(c&&c.payFreq==='月繳'?' selected':!c||!c.payFreq?' selected':'')+'>月繳</option><option'+(c&&c.payFreq==='年繳'?' selected':'')+'>年繳</option></select></div>'
+      +'<div class="fgroup ffull"><label class="checkbox-row"><input type="checkbox" id="f-paused"'+(c&&c.isPaused?' checked':'')+'><span class="checkbox-label">目前緩繳中</span></label></div>';
+  }
+  var tgHeader=mType==='monthly'
+    ?'<div style="display:grid;grid-template-columns:1fr 70px 70px 52px 28px;gap:8px;margin-bottom:6px;font-size:10px;font-family:\'DM Mono\',monospace;color:var(--text-muted)"><div>標的名稱</div><div style="text-align:center;color:var(--green)">現金%</div><div style="text-align:center;color:var(--blue)">買回%</div><div style="text-align:center">合計</div><div></div></div>'
+    :'<div style="display:grid;grid-template-columns:1fr 70px 28px;gap:8px;margin-bottom:6px;font-size:10px;font-family:\'DM Mono\',monospace;color:var(--text-muted)"><div>標的名稱</div><div style="text-align:center;color:var(--gold)">配置%</div><div></div></div>';
+  document.getElementById('modal-box').innerHTML=
+    '<div class="modal-header"><div class="modal-title">'+(isEdit?'編輯客戶':'新增客戶')+'</div><button class="modal-close" onclick="closeModal()">×</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="fsec"><div class="fsec-title">商品類型</div><div class="type-tabs">'
+    +'<div class="type-tab monthly'+(mType==='monthly'?' active':'')+'" onclick="switchMType(\'monthly\')">◈ 月配息保單</div>'
+    +'<div class="type-tab regular'+(mType==='regular'?' active':'')+'" onclick="switchMType(\'regular\')">◈ 定期定額</div>'
+    +'</div></div>'
+    +'<div class="fsec"><div class="fsec-title">基本資料</div><div class="fgrid">'
+    +'<div class="fgroup"><label class="flabel">客戶姓名 *</label><input class="finput" id="f-name" placeholder="姓名" value="'+(c?c.name:'')+'"></div>'
+    +'<div class="fgroup"><label class="flabel">保險公司 *</label><select class="fselect" id="f-company">'+coOpts+'</select></div>'
+    +'<div class="fgroup"><label class="flabel">商品名稱 *</label><select class="fselect" id="f-product">'+pOpts+'</select></div>'
+    +'<div class="fgroup"><label class="flabel">幣別</label><select class="fselect" id="f-currency">'+curOpts+'</select></div>'
+    +'<div class="fgroup"><label class="flabel">簽約日期</label><input class="finput" id="f-signDate" type="date" value="'+(c&&c.signDate?c.signDate:'')+'"></div>'
+    +extraFields+'</div></div>'
+    +'<div class="fsec"><div class="fsec-title">標的配置</div>'+tgHeader
+    +'<div id="targets-ed"></div><div style="margin-top:8px"><button class="btn-icon add" onclick="addMTarget()">＋</button></div></div>'
+    +'</div>'
+    +'<div class="modal-footer"><button class="btn-secondary" onclick="closeModal()">取消</button>'
+    +'<button class="btn-gold" onclick="saveClient(\''+(c?c.id:'')+'\''+')">'+(isEdit?'儲存變更':'新增')+'</button></div>';
+  renderMTargets();
+}
+
+function switchMType(t){
+  mType=t;
+  var vals={n:document.getElementById('f-name')?document.getElementById('f-name').value:'',
+    co:document.getElementById('f-company')?document.getElementById('f-company').value:'',
+    pr:document.getElementById('f-product')?document.getElementById('f-product').value:'',
+    cu:document.getElementById('f-currency')?document.getElementById('f-currency').value:'台幣',
+    sd:document.getElementById('f-signDate')?document.getElementById('f-signDate').value:''};
+  mTargets=t==='monthly'?[{name:'',cashPct:'',unitPct:''}]:[{name:'',pct:''}];
+  renderClientModal(null);
+  if(document.getElementById('f-name'))document.getElementById('f-name').value=vals.n;
+  if(document.getElementById('f-company'))document.getElementById('f-company').value=vals.co;
+  if(document.getElementById('f-product'))document.getElementById('f-product').value=vals.pr;
+  if(document.getElementById('f-currency'))document.getElementById('f-currency').value=vals.cu;
+  if(document.getElementById('f-signDate'))document.getElementById('f-signDate').value=vals.sd;
+}
+window.switchMType=switchMType;
+
+function addMTarget(){mTargets.push(mType==='monthly'?{name:'',cashPct:'',unitPct:''}:{name:'',pct:''});renderMTargets();}
+function removeMTarget(i){mTargets.splice(i,1);if(!mTargets.length)mTargets.push(mType==='monthly'?{name:'',cashPct:'',unitPct:''}:{name:'',pct:''});renderMTargets();}
+function updMT(i,f,v){mTargets[i][f]=v;renderMTargets();}
+window.addMTarget=addMTarget;window.removeMTarget=removeMTarget;window.updMT=updMT;
+
+function renderMTargets(){
+  var ed=document.getElementById('targets-ed');if(!ed)return;
+  var h='';
+  mTargets.forEach(function(t,i){
+    if(mType==='monthly'){
+      var sum=(parseFloat(t.cashPct)||0)+(parseFloat(t.unitPct)||0);
+      var sc=sum===100?'ok':sum>100?'over':'';
+      h+='<div class="trow trow-monthly"><input class="finput" placeholder="標的名稱" value="'+t.name+'" oninput="updMT('+i+',\'name\',this.value)"><input class="finput" type="number" placeholder="%" value="'+t.cashPct+'" oninput="updMT('+i+',\'cashPct\',this.value)" style="text-align:right;border-color:rgba(76,175,122,.4)"><input class="finput" type="number" placeholder="%" value="'+t.unitPct+'" oninput="updMT('+i+',\'unitPct\',this.value)" style="text-align:right;border-color:rgba(92,154,224,.4)"><div class="trow-sum '+sc+'">'+sum+'%</div><button class="btn-icon" onclick="removeMTarget('+i+')">✕</button></div>';
+    } else {
+      h+='<div class="trow trow-regular"><input class="finput" placeholder="標的名稱" value="'+t.name+'" oninput="updMT('+i+',\'name\',this.value)"><input class="finput" type="number" placeholder="%" value="'+t.pct+'" oninput="updMT('+i+',\'pct\',this.value)" style="text-align:right;border-color:rgba(201,168,76,.4)"><button class="btn-icon" onclick="removeMTarget('+i+')">✕</button></div>';
+    }
+  });
+  if(mType==='regular'){
+    var tot=mTargets.reduce(function(s,t){return s+(parseFloat(t.pct)||0);},0);
+    var tc=tot===100?'var(--green)':tot>100?'var(--red)':'var(--text-muted)';
+    h+='<div style="font-size:11px;font-family:\'DM Mono\',monospace;color:'+tc+';margin-top:4px">合計 '+tot+'%'+(tot===100?' ✓':'')+'</div>';
+  }
+  ed.innerHTML=h;
+}
+
+function saveClient(id){
+  var name=(document.getElementById('f-name').value||'').trim();
+  if(!name){alert('請填寫客戶姓名');return;}
+  var data={name:name,company:document.getElementById('f-company').value,
+    productName:document.getElementById('f-product').value,
+    currency:document.getElementById('f-currency').value,
+    signDate:document.getElementById('f-signDate').value,
+    type:mType,targets:mTargets.filter(function(t){return t.name.trim();})};
+  if(mType==='monthly'){
+    var ep=document.getElementById('f-ep');
+    if(!ep||!ep.value){alert('請填寫進場本金');return;}
+    data.entryPrincipal=parseFloat(ep.value);
+  } else {
+    var tp=document.getElementById('f-tp');
+    if(!tp||!tp.value){alert('請填寫目標保費');return;}
+    data.targetPremium=parseFloat(tp.value);data.entryPrincipal=parseFloat(tp.value);
+    var pf=document.getElementById('f-payFreq');data.payFreq=pf?pf.value:'月繳';
+    var ps=document.getElementById('f-paused');data.isPaused=ps?ps.checked:false;
+  }
+  if(id){
+    var idx=db.clients.findIndex(function(c){return c.id===id;});
+    db.clients[idx]=Object.assign({},db.clients[idx],data);
+  } else {
+    db.clients.push(Object.assign({id:uid(),records:[]},data));
+  }
+  saveDB();closeModal();render();
+}
+window.saveClient=saveClient;
+
+function deleteClient(id){
+  if(!confirm('確定刪除此客戶及所有紀錄？'))return;
+  db.clients=db.clients.filter(function(c){return c.id!==id;});
+  saveDB();render();
+}
+window.deleteClient=deleteClient;
+
+// ─── RECORD MODAL ─────────────────────────────────────────────────────────────
+function openRecordModal(recId){
+  var c=db.clients.find(function(x){return x.id===currentId;});if(!c)return;
+  var rec=recId?(c.records||[]).find(function(r){return r.id===recId;}):null;
+  var defT=c.targets?JSON.parse(JSON.stringify(c.targets)):(c.type==='monthly'?[{name:'',cashPct:'',unitPct:''}]:[{name:'',pct:''}]);
+  rTargets=rec&&rec.targets?JSON.parse(JSON.stringify(rec.targets)):defT;
+  var isM=c.type==='monthly';
+  var today=new Date().toISOString().slice(0,10);
+  var extra=isM
+    ?'<div class="fgroup"><label class="flabel">累計已領利息</label><input class="finput" id="r-ci" type="number" placeholder="0" value="'+(rec&&rec.cumInterest?rec.cumInterest:'')+'"></div>'
+    :'<div class="fgroup"><label class="flabel">累計已繳本金</label><input class="finput" id="r-cp" type="number" placeholder="0" value="'+(rec&&rec.cumPaid?rec.cumPaid:'')+'"></div>';
+  var tgHeader=isM
+    ?'<div style="display:grid;grid-template-columns:1fr 70px 70px 52px 28px;gap:8px;margin-bottom:6px;font-size:10px;font-family:\'DM Mono\',monospace;color:var(--text-muted)"><div>標的名稱</div><div style="text-align:center;color:var(--green)">現金%</div><div style="text-align:center;color:var(--blue)">買回%</div><div style="text-align:center">合計</div><div></div></div>'
+    :'<div style="display:grid;grid-template-columns:1fr 70px 28px;gap:8px;margin-bottom:6px;font-size:10px;font-family:\'DM Mono\',monospace;color:var(--text-muted)"><div>標的名稱</div><div style="text-align:center;color:var(--gold)">配置%</div><div></div></div>';
+  document.getElementById('modal-overlay').style.display='flex';
+  document.getElementById('modal-box').innerHTML=
+    '<div class="modal-header"><div class="modal-title">'+(rec?'編輯':'新增')+'檢視紀錄 — '+c.name+'</div><button class="modal-close" onclick="closeModal()">×</button></div>'
+    +'<div class="modal-body">'
+    +'<div class="fsec"><div class="fsec-title">基本資訊</div><div class="fgrid">'
+    +'<div class="fgroup"><label class="flabel">檢視日期 *</label><input class="finput" id="r-date" type="date" value="'+(rec&&rec.reviewDate?rec.reviewDate:today)+'"></div>'
+    +'<div class="fgroup"><label class="flabel">帳面本金／帳戶金額 *</label><input class="finp
