@@ -469,6 +469,22 @@ function calcPolicyYear(signDate){
   if(years<0)years=0;
   return years+1; // 第1年起算
 }
+
+function calcRegularCumPaid(signDate, premium, payFreq){
+  if(!signDate||!premium) return 0;
+  var sign=new Date(signDate), now=new Date();
+  var p=parseFloat(premium)||0;
+  if(payFreq==='年繳'){
+    // 簽約年度起，已過幾個完整保單年度+1（目前年度）
+    var py=calcPolicyYear(signDate);
+    return p*(py||1);
+  } else {
+    // 月繳：從簽約月份（含）算到現在月份（含）
+    var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth())+1;
+    if(months<1) months=1;
+    return p*months;
+  }
+}
 function calcCumPremium(signDate,premium,payFreq){
   if(!signDate||!premium)return 0;
   var sign=new Date(signDate);
@@ -703,23 +719,25 @@ function buildRegularRow(c){
   var last=c.records&&c.records.length?c.records[c.records.length-1]:null;
   var tp=parseFloat(c.targetPremium)||0;
   var latestP=last?parseFloat(last.principal)||0:0;
-  var cumPaid=last?parseFloat(last.cumPaid)||0:0;
-  var pct=last?calcPct(latestP,cumPaid):null;
-  return'<tr onclick="goDetail(\''+c.id+'\')">'
-    +'<td style="font-weight:500">'+c.name+(c.isPaused?' <span class="tag tag-paused">緩繳</span>':'')+'</td>'
+  var autoCum=calcRegularCumPaid(c.signDate,tp,c.payFreq||'月繳');
+  var lastCumPaid=last&&last.cumPaid?parseFloat(last.cumPaid)||0:0;
+  var cumDisplay=lastCumPaid>0?lastCumPaid:autoCum;
+  var pct=(cumDisplay>0&&latestP>0)?calcPct(latestP,cumDisplay):null;
+  return'<tr onclick="goDetail(\''+c.id+'\')">'  
+    +'<td style="font-weight:500">'+c.name+(c.isPaused?' <span class="tag tag-paused">緩繳</span>':'')+  '</td>'
     +'<td><span class="tag tag-company">'+c.company+'</span></td>'
     +'<td style="color:var(--text-dim);font-size:12px">'+c.productName+'</td>'
     +'<td><span class="tag '+(c.currency==='美金'?'tag-usd':'tag-twd')+'">'+c.currency+'</span></td>'
     +'<td><span class="tag tag-company">'+(c.payFreq||'月繳')+'</span></td>'
-    +'<td style="font-family:\'DM Mono\',monospace;font-size:12px;color:var(--text-dim)">'+(c.signDate||'—')+'</td>'
-    +'<td class="amount">'+fmtN(tp)+'/期</td>'
-    +'<td class="amount">'+(cumPaid>0?fmtN(cumPaid):'—')+'</td>'
-    +'<td class="amount">'+(last?fmtN(latestP):'<span style="color:var(--text-muted)">—</span>')+'</td>'
+    +'<td style="font-family:DM Mono,monospace;font-size:12px;color:var(--text-dim)">'+(c.signDate||'—')+'</td>'
+    +'<td class="amount">'+fmtN(tp,c.currency)+'/期</td>'
+    +'<td class="amount">'+fmtN(autoCum,c.currency)+'</td>'
+    +'<td class="amount">'+(latestP>0?fmtN(latestP,c.currency):'<span style="color:var(--text-muted)">—</span>')+'</td>'
     +'<td>'+pctSpan(pct)+'</td>'
     +'<td onclick="event.stopPropagation()"><div class="action-btns">'
-    +'<button class="btn-sm btn-view" onclick="goDetail(\''+c.id+'\')">查看</button>'
-    +'<button class="btn-sm btn-edit" onclick="openClientModal(\''+c.id+'\')">編輯</button>'
-    +'<button class="btn-sm btn-del" onclick="deleteClient(\''+c.id+'\')">✕</button>'
+    +'<button class="btn-sm btn-view" onclick="goDetail(\''+c.id+'\')">' +'查看</button>'
+    +'<button class="btn-sm btn-edit" onclick="openClientModal(\''+c.id+'\')">'+'編輯</button>'
+    +'<button class="btn-sm btn-del" onclick="deleteClient(\''+c.id+'\')">'+'✕</button>'
     +'</div></td></tr>';
 }
 function renderRegularList(){
@@ -940,11 +958,18 @@ function renderRegularDetail(c){
   (c.targets||[]).forEach(function(t){tgHtml+='<div class="target-chip">'+t.name+'<span class="pct-num">'+t.pct+'%</span></div>';});
   tgHtml+='<div class="target-chip" style="border-color:'+sumColor+';color:'+sumColor+'">合計 '+tgTotal+'%</div>';
   tgHtml+='</div></div>';
-  var detailCard='<div class="detail-card"><div class="detail-top">'
+  var autoCum=calcRegularCumPaid(c.signDate,tp,c.payFreq||'月繳');
+  // cumInvested = 最新record的實際投入（若有），否則用自動計算
+  var cumInvested=last&&last.cumPaid&&parseFloat(last.cumPaid)>0?parseFloat(last.cumPaid):autoCum;
+  var investPct=cumInvested>0&&latestP>0?calcPct(latestP,cumInvested):null;
+  var investPctClass=investPct===null?'':investPct>=0?'pct-pos':'pct-neg';
+  var investPctText=investPct===null?'—':(investPct>=0?'▲ +':'▼ ')+Math.abs(investPct).toFixed(2)+'%';
+  var detailCard='<div class="detail-card"><div class="detail-top-5">'
     +makeDetailCol1(c,'定期定額','tag-regular')
-    +'<div class="ds"><div class="ds-label">目標保費 / 期</div><div class="ds-val gold">'+fmtN(tp)+'</div></div>'
-    +(cumPaid?'<div class="ds"><div class="ds-label">累計已繳</div><div class="ds-val">'+fmtN(cumPaid)+'</div></div>':'<div class="ds" style="opacity:.4"><div class="ds-label">累計已繳</div><div class="ds-val">—</div></div>')
-    +(last?'<div class="ds"><div class="ds-label">帳戶金額</div><div class="ds-val">'+fmtN(latestP)+'</div>'+(pct!==null?'<div style="margin-top:5px;font-size:14px" class="'+pctClass+'">'+pctText+'</div>':'')+'</div>':'<div class="ds" style="opacity:.4"><div class="ds-label">帳戶金額</div><div class="ds-val">—</div></div>')
+    +'<div class="ds ds-sm"><div class="ds-label">目標保費 / 期</div><div class="ds-val gold">'+fmtN(tp,c.currency)+'</div></div>'
+    +'<div class="ds ds-sm"><div class="ds-label">累計已繳</div><div class="ds-val">'+fmtN(autoCum,c.currency)+'</div></div>'
+    +'<div class="ds ds-sm"><div class="ds-label">累計投入（實際）</div><div class="ds-val">'+fmtN(cumInvested,c.currency)+'</div></div>'
+    +(last?'<div class="ds ds-sm"><div class="ds-label">帳面金額</div><div class="ds-val">'+fmtN(latestP,c.currency)+'</div>'+(investPct!==null?'<div style="margin-top:4px;font-size:12px" class="'+investPctClass+'">'+investPctText+'</div>':'')+'</div>':'<div class="ds ds-sm" style="opacity:.4"><div class="ds-label">帳面金額</div><div class="ds-val">—</div></div>')
     +'</div></div>';
   var recHtml='';
   if(!records.length){recHtml='<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-text">尚無檢視紀錄</div></div>';}
@@ -952,14 +977,14 @@ function renderRegularDetail(c){
     records.slice().reverse().forEach(function(r){
       var p=parseFloat(r.principal)||0;
       var cp=parseFloat(r.cumPaid)||0;
-      var rPct=calcPct(p,cp);
+      var rPct=cp>0?calcPct(p,cp):null;
       var pTxt=rPct===null?'—':(rPct>=0?'▲ +':'▼ ')+Math.abs(rPct).toFixed(2)+'%';
       var pColor=rPct===null?'var(--text-dim)':rPct>=0?'var(--green)':'var(--red)';
       recHtml+='<div class="record-row"><div class="rec-grid-regular">'
         +'<div><div class="rec-date">'+r.reviewDate+'</div></div>'
-        +'<div><div class="rec-label">累計已繳</div><div class="rec-val amount">'+fmtN(cp)+'</div></div>'
-        +'<div><div class="rec-label">帳戶金額</div><div class="rec-val amount">'+fmtN(p)+'</div></div>'
-        +'<div><div class="rec-label">整體漲幅</div><div class="rec-val" style="font-size:16px;font-family:\'Playfair Display\',serif;color:'+pColor+'">'+pTxt+'</div></div>'
+        +'<div><div class="rec-label">實際投入金額</div><div class="rec-val amount">'+fmtN(cp,c.currency)+'</div></div>'
+        +'<div><div class="rec-label">帳面金額</div><div class="rec-val amount">'+fmtN(p,c.currency)+'</div></div>'
+        +'<div><div class="rec-label">漲幅（投入vs帳面）</div><div class="rec-val" style="font-size:16px;font-family:Playfair Display,serif;color:'+pColor+'">'+pTxt+'</div></div>'
         +'<div><div class="rec-label">備註</div><div class="rec-val" style="font-size:12px;color:var(--text-muted)">'+(r.note||'—')+'</div></div>'
         +'<div style="display:flex;gap:6px;align-items:flex-start;padding-top:18px">'
         +'<button class="btn-sm btn-edit" onclick="openRecordModal(\''+r.id+'\')">編輯</button>'
@@ -1151,8 +1176,8 @@ function openRecordModal(recId){
   var extra=isM
     ?'<div class="fgroup"><label class="flabel">帳戶價值 *</label><input class="finput" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
      +'<div class="fgroup"><label class="flabel">累計已領總利息</label><input class="finput" id="r-ci" type="number" placeholder="0" value="'+(rec&&rec.cumInterest?rec.cumInterest:'')+'"></div>'
-    :'<div class="fgroup"><label class="flabel">帳戶金額 *</label><input class="finput" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
-     +'<div class="fgroup"><label class="flabel">累計已繳本金</label><input class="finput" id="r-cp" type="number" placeholder="0" value="'+(rec&&rec.cumPaid?rec.cumPaid:'')+'"></div>';
+    :'<div class="fgroup"><label class="flabel">帳面金額 *</label><input class="finput" id="r-principal" type="number" placeholder="0" value="'+(rec&&rec.principal?rec.principal:'')+'"></div>'
+     +'<div class="fgroup"><label class="flabel">實際投入金額</label><input class="finput" id="r-cp" type="number" placeholder="0" value="'+(rec&&rec.cumPaid?rec.cumPaid:'')+'"></div>';
   window._recId=rec?rec.id:'';
   window._ctype=c.type;
   window._cid=c.id;
