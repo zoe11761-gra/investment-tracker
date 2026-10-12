@@ -7,62 +7,67 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Noto+Serif+TC:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0d0d0f;--surface:#141416;--surface2:#1c1c1f;--surface3:#242428;
-  --border:#2a2a2e;--gold:#c9a84c;--gold-light:#e8c97a;--gold-dim:rgba(201,168,76,.15);
-  --text:#e8e6e1;--text-dim:#8a8880;--text-muted:#4a4a50;
-  --green:#4caf7a;--red:#e05c5c;--blue:#5c9ae0;
+  --bg:#f0ebe3;--surface:#f8f5f0;--surface2:#ede7dd;--surface3:#e4dcd0;
+  --border:#cfc4b4;--gold:#a0581e;--gold-light:#b5681e;--gold-dim:rgba(160,88,30,.12);
+  --text:#2a1e10;--text-dim:#5e4428;--text-muted:#9a7d60;
+  --green:#3d6e40;--red:#9e3a36;--blue:#3d5e96;
   --radius:10px;--radius-sm:6px;
-  --shadow:0 4px 24px rgba(0,0,0,.4);--shadow-gold:0 0 30px rgba(201,168,76,.08);
+  --shadow:0 4px 24px rgba(80,50,20,.1);--shadow-gold:0 0 30px rgba(160,88,30,.09);
+  --cream:#f0ebe3;--blush:#e8d8cc;--sage:#dde6d8;--petal:#e4d0c0;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Serif TC',serif;min-height:100vh;
-  background-image:radial-gradient(ellipse at 20% 0%,rgba(201,168,76,.04) 0%,transparent 60%),
-  radial-gradient(ellipse at 80% 100%,rgba(92,154,224,.03) 0%,transparent 60%);}
-.header{border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;
-  justify-content:space-between;background:rgba(13,13,15,.97);backdrop-filter:blur(10px);
-  position:sticky;top:0;z-index:100;}
-.header-brand{display:flex;align-items:center;gap:12px;}
-.header-icon{width:34px;height:34px;border:1px solid var(--gold);border-radius:6px;
-  display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:14px;font-weight:bold;}
-.header-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold-light);letter-spacing:.3px;}
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(160,88,30,.06) 0%,transparent 60%),
+  radial-gradient(ellipse at 80% 100%,rgba(80,110,80,.05) 0%,transparent 60%);}
+.header{border-bottom:1px solid var(--border);padding:0 32px 0 32px;display:flex;align-items:stretch;
+  justify-content:space-between;background:rgba(240,235,227,.97);backdrop-filter:blur(10px);
+  position:sticky;top:0;z-index:100;min-height:67px;}
+.header-brand{display:flex;align-items:center;gap:12px;padding:14px 0;flex-shrink:0;}
+.header-icon{width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:20px;}
+.header-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold);letter-spacing:.3px;}
 .header-sub{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:1px;margin-top:1px;}
-.btn-gold{background:var(--gold);color:#0d0d0f;border:none;padding:8px 18px;border-radius:var(--radius-sm);
+/* tabs 嵌入 header — 靠右對齊 */
+.header-tabs{display:flex;align-items:stretch;margin-left:auto;margin-right:24px;}
+.header-tab{padding:0 22px;font-size:13px;color:var(--text-muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all .2s;font-family:'Noto Serif TC',serif;
+  display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.header-tab:hover{color:var(--text-dim);}
+.header-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.header-tab .tab-count{display:none;}
+.header-tab.active .tab-count{display:none;}
+.btn-gold{background:var(--gold);color:#faf8f4;border:none;padding:8px 18px;border-radius:20px;
   font-family:'Noto Serif TC',serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;
-  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
-.btn-gold:hover{background:var(--gold-light);transform:translateY(-1px);}
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;letter-spacing:.3px;}
+.btn-gold:hover{background:var(--gold-light);transform:translateY(-1px);box-shadow:0 4px 12px rgba(181,113,74,.25);}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);display:inline-block;margin-right:4px;transition:background .3s;}
 .sync-dot.syncing{background:var(--gold);animation:pulse .8s infinite;}
 .sync-dot.ok{background:var(--green);}
 .sync-dot.err{background:var(--red);}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
-.main-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);
-  position:sticky;top:67px;z-index:90;}
-.main-tab{padding:13px 24px;font-size:13px;color:var(--text-muted);cursor:pointer;
-  border-bottom:2px solid transparent;transition:all .2s;font-family:'Noto Serif TC',serif;
-  display:flex;align-items:center;gap:8px;white-space:nowrap;}
-.main-tab:hover{color:var(--text-dim);}
-.main-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.main-tabs{display:none;}
 .tab-count{background:var(--surface3);border:1px solid var(--border);border-radius:10px;
   padding:1px 7px;font-size:10px;font-family:'DM Mono',monospace;}
-.main-tab.active .tab-count{background:var(--gold-dim);border-color:rgba(201,168,76,.3);color:var(--gold);}
-.main{padding:22px 32px;max-width:1600px;margin:0 auto;}
+.main{padding:22px 32px;max-width:1600px;margin:0 auto;margin-top:0;}
 .stats-bar{display:grid;gap:12px;margin-bottom:22px;}
 .stats-bar-3{grid-template-columns:repeat(3,1fr);}
 .stats-bar-4{grid-template-columns:repeat(4,1fr);}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:14px 18px;position:relative;overflow:hidden;}
+  padding:14px 18px;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(100,70,40,.05);}
 .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--gold),transparent);opacity:.5;}
+  background:linear-gradient(90deg,var(--gold),var(--blush),transparent);opacity:.7;}
+.stat-card::after{content:'✿';position:absolute;bottom:6px;right:10px;font-size:18px;
+  color:var(--border);opacity:.5;pointer-events:none;}
 .stat-label{font-size:10px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;}
 .stat-value-row{display:flex;align-items:baseline;gap:5px;margin-top:3px;}
-.stat-value{font-size:20px;color:var(--gold-light);font-family:'Playfair Display',serif;}
+.stat-value{font-size:20px;color:var(--gold);font-family:'Playfair Display',serif;}
 .stat-sub-inline{font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .section-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--text);
   display:flex;align-items:center;gap:8px;}
-.section-title::before{content:'';width:3px;height:16px;background:var(--gold);border-radius:2px;}
-.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
-  padding:7px 13px;color:var(--text);font-family:'Noto Serif TC',serif;font-size:13px;
+.section-title::before{content:'❧';width:auto;height:auto;background:none;color:var(--gold);font-size:14px;border-radius:0;}
+.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:20px;
+  padding:7px 15px;color:var(--text);font-family:'Noto Serif TC',serif;font-size:13px;
   width:200px;outline:none;transition:border-color .2s;}
 .search-box:focus{border-color:var(--gold);}
 .search-box::placeholder{color:var(--text-muted);}
@@ -77,19 +82,20 @@ th:hover{color:var(--text-dim);}
 th.sorted-asc,th.sorted-desc{color:var(--gold);}
 th .sort-icon{margin-left:4px;opacity:.5;font-size:9px;}
 th.sorted-asc .sort-icon,th.sorted-desc .sort-icon{opacity:1;}
-tbody tr{border-bottom:1px solid rgba(42,42,46,.5);transition:background .15s;cursor:pointer;}
+tbody tr{border-bottom:1px solid rgba(210,190,170,.4);transition:background .15s;cursor:pointer;}
 tbody tr:last-child{border-bottom:none;}
-tbody tr:hover{background:rgba(201,168,76,.04);}
+tbody tr:nth-child(even){background:rgba(164,144,120,.055);}
+tbody tr:hover{background:rgba(181,113,74,.07);}
 td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;
   font-family:'DM Mono',monospace;letter-spacing:.5px;white-space:nowrap;}
-.tag-monthly{background:rgba(201,168,76,.12);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
-.tag-regular{background:rgba(92,154,224,.12);color:var(--blue);border:1px solid rgba(92,154,224,.2);}
-.tag-savings{background:rgba(76,175,122,.1);color:var(--green);border:1px solid rgba(76,175,122,.25);}
+.tag-monthly{background:rgba(181,113,74,.1);color:var(--gold);border:1px solid rgba(181,113,74,.2);}
+.tag-regular{background:rgba(90,126,181,.1);color:var(--blue);border:1px solid rgba(90,126,181,.2);}
+.tag-savings{background:rgba(90,138,92,.1);color:var(--green);border:1px solid rgba(90,138,92,.2);}
 .tag-company{background:var(--surface3);color:var(--text-dim);border:1px solid var(--border);}
-.tag-usd{background:rgba(76,175,122,.1);color:var(--green);border:1px solid rgba(76,175,122,.25);}
-.tag-twd{background:rgba(201,168,76,.1);color:var(--gold);border:1px solid rgba(201,168,76,.2);}
-.tag-paused{background:rgba(224,92,92,.1);color:var(--red);border:1px solid rgba(224,92,92,.2);}
+.tag-usd{background:rgba(90,138,92,.1);color:var(--green);border:1px solid rgba(90,138,92,.2);}
+.tag-twd{background:rgba(181,113,74,.1);color:var(--gold);border:1px solid rgba(181,113,74,.2);}
+.tag-paused{background:rgba(184,84,80,.1);color:var(--red);border:1px solid rgba(184,84,80,.2);}
 .amount{font-family:'DM Mono',monospace;}
 .pct-pos{color:var(--green);}
 .pct-neg{color:var(--red);}
@@ -102,17 +108,17 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 .btn-edit{background:transparent;border-color:var(--border);color:var(--text-dim);}
 .btn-edit:hover{border-color:var(--text-dim);color:var(--text);}
 .btn-del{background:transparent;border-color:transparent;color:var(--text-muted);}
-.btn-del:hover{color:var(--red);border-color:rgba(224,92,92,.3);}
+.btn-del:hover{color:var(--red);border-color:rgba(184,84,80,.3);}
 .btn-secondary{background:transparent;color:var(--text-dim);border:1px solid var(--border);
-  padding:8px 20px;border-radius:var(--radius-sm);font-family:'Noto Serif TC',serif;
+  padding:8px 20px;border-radius:20px;font-family:'Noto Serif TC',serif;
   font-size:13px;cursor:pointer;transition:all .2s;}
 .btn-secondary:hover{border-color:var(--text-dim);color:var(--text);}
 .btn-outline{background:transparent;border:1px solid var(--gold);color:var(--gold);
-  padding:7px 14px;border-radius:var(--radius-sm);font-family:'Noto Serif TC',serif;
+  padding:7px 14px;border-radius:20px;font-family:'Noto Serif TC',serif;
   font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .btn-outline:hover{background:var(--gold-dim);}
 .btn-back{background:transparent;border:1px solid var(--border);color:var(--text-dim);
-  padding:6px 13px;border-radius:var(--radius-sm);font-family:'DM Mono',monospace;
+  padding:6px 13px;border-radius:20px;font-family:'DM Mono',monospace;
   font-size:11px;cursor:pointer;letter-spacing:.5px;transition:all .2s;
   display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
 .btn-back:hover{border-color:var(--text-dim);color:var(--text);}
@@ -123,13 +129,14 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 .breadcrumb .sep,.breadcrumb .current{cursor:default;}
 .breadcrumb .current{color:var(--text-dim);}
 .detail-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow-gold);}
+  padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow-gold);
+  background-image:radial-gradient(ellipse at 95% 5%,rgba(181,113,74,.04) 0%,transparent 50%);}
 .detail-top{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:20px;align-items:stretch;}
 .detail-top-5{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:14px;align-items:stretch;}
 .ds-sm .ds-val{font-size:16px;}
 .ds-sm .ds-label{font-size:9px;}
 .ds-sm{padding:11px 14px;}
-.detail-name{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold-light);}
+.detail-name{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);}
 .detail-col1{display:flex;gap:18px;align-items:flex-start;}
 .detail-col1-info{display:flex;flex-direction:column;gap:8px;padding-top:4px;}
 .ds{padding:14px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
@@ -137,26 +144,27 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 .ds-label{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:1.2px;
   text-transform:uppercase;margin-bottom:6px;}
 .ds-val{font-size:22px;color:var(--text);font-family:'Playfair Display',serif;line-height:1.2;}
-.ds-val.gold{color:var(--gold-light);}
+.ds-val.gold{color:var(--gold);}
 .ds-val.green{color:var(--green);}
 .targets-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);
   padding:12px 18px;margin-bottom:18px;display:flex;align-items:center;gap:18px;}
 .targets-box-title{font-size:10px;color:var(--text-muted);font-family:'DM Mono',monospace;
   letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;flex-shrink:0;}
 .targets-chips{display:flex;flex-wrap:wrap;gap:7px;flex:1;}
-.target-chip{background:var(--surface3);border:1px solid var(--border);border-radius:6px;
+.target-chip{background:var(--surface);border:1px solid var(--border);border-radius:20px;
   padding:6px 12px;font-size:14px;font-family:'DM Mono',monospace;color:var(--text-dim);
   display:flex;gap:8px;align-items:center;}
 .target-chip .cash{color:var(--green);}
 .target-chip .unit{color:var(--blue);}
 .target-chip .pct-num{color:var(--gold);}
 .timeline-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.timeline-head{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface2);
+.timeline-head{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--blush);
   display:flex;align-items:center;justify-content:space-between;}
 .timeline-title{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:1px;color:var(--text-dim);}
-.record-row{padding:14px 20px;border-bottom:1px solid rgba(42,42,46,.5);transition:background .15s;}
+.record-row{padding:14px 20px;border-bottom:1px solid rgba(210,190,170,.4);transition:background .15s;}
 .record-row:last-child{border-bottom:none;}
-.record-row:hover{background:rgba(201,168,76,.03);}
+.record-row:nth-child(even){background:rgba(164,144,120,.055);}
+.record-row:hover{background:rgba(181,113,74,.07);}
 .rec-grid-monthly{display:grid;grid-template-columns:150px 1fr 1fr 1fr auto;gap:16px;align-items:start;}
 .rec-grid-regular{display:grid;grid-template-columns:150px 1fr 1fr 1fr 1fr auto;gap:16px;align-items:start;}
 .rec-date{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);}
@@ -170,53 +178,55 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
   align-items:center;justify-content:center;z-index:999;gap:16px;}
 .loading-logo{font-family:'Playfair Display',serif;font-size:48px;color:var(--gold);opacity:.8;}
+.loading-logo::before{content:'✿ ';font-size:28px;color:var(--blush);}
+.loading-logo::after{content:' ✿';font-size:28px;color:var(--blush);}
 .loading-text{font-size:12px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:2px;}
 .loading-bar{width:200px;height:2px;background:var(--border);border-radius:1px;overflow:hidden;}
-.loading-bar-inner{height:100%;background:var(--gold);border-radius:1px;animation:loadbar 1.5s ease-in-out infinite;}
+.loading-bar-inner{height:100%;background:linear-gradient(90deg,var(--gold),var(--blush));border-radius:1px;animation:loadbar 1.5s ease-in-out infinite;}
 @keyframes loadbar{0%{width:0;margin-left:0;}50%{width:60%;margin-left:20%;}100%{width:0;margin-left:100%;}}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.77);backdrop-filter:blur(4px);
+.modal-overlay{position:fixed;inset:0;background:rgba(80,50,30,.4);backdrop-filter:blur(4px);
   z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;
   width:100%;max-width:660px;max-height:92vh;overflow-y:auto;
-  box-shadow:0 20px 60px rgba(0,0,0,.6),var(--shadow-gold);animation:mIn .2s ease;}
+  box-shadow:0 20px 60px rgba(100,60,30,.15),var(--shadow-gold);animation:mIn .2s ease;}
 @keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px);}to{opacity:1;transform:scale(1) translateY(0);}}
 .modal-header{padding:18px 24px 14px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;}
-.modal-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold-light);}
+  display:flex;align-items:center;justify-content:space-between;background:var(--blush);border-radius:16px 16px 0 0;}
+.modal-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold);}
 .modal-close{background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;transition:color .15s;}
 .modal-close:hover{color:var(--text);}
 .modal-body{padding:18px 24px;}
 .modal-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
 .fsec{margin-bottom:18px;}
 .fsec-title{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:2px;color:var(--gold);
-  text-transform:uppercase;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid rgba(201,168,76,.15);}
+  text-transform:uppercase;margin-bottom:11px;padding-bottom:7px;border-bottom:1px solid rgba(181,113,74,.15);}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
 .ffull{grid-column:1/-1;}
 .fgroup{display:flex;flex-direction:column;gap:5px;}
 .flabel{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;letter-spacing:.5px;}
 .finput,.fselect,.ftextarea{background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius-sm);padding:8px 11px;color:var(--text);font-family:'Noto Serif TC',serif;
+  border-radius:8px;padding:8px 11px;color:var(--text);font-family:'Noto Serif TC',serif;
   font-size:13px;outline:none;transition:border-color .2s;width:100%;}
 .finput:focus,.fselect:focus,.ftextarea:focus{border-color:var(--gold);}
 .fselect option{background:var(--surface2);}
 .finput::placeholder{color:var(--text-muted);}
 .ftextarea{resize:vertical;min-height:56px;}
 .type-tabs{display:flex;gap:8px;margin-bottom:4px;}
-.type-tab{flex:1;padding:9px;text-align:center;border:1px solid var(--border);border-radius:var(--radius-sm);
+.type-tab{flex:1;padding:9px;text-align:center;border:1px solid var(--border);border-radius:20px;
   cursor:pointer;font-size:12px;transition:all .2s;color:var(--text-dim);background:var(--surface2);}
 .type-tab.active.monthly{border-color:var(--gold);color:var(--gold);background:var(--gold-dim);}
-.type-tab.active.regular{border-color:var(--blue);color:var(--blue);background:rgba(92,154,224,.1);}
+.type-tab.active.regular{border-color:var(--blue);color:var(--blue);background:rgba(90,126,181,.1);}
 .trow{display:grid;gap:8px;align-items:center;margin-bottom:8px;}
 .trow-monthly{grid-template-columns:1fr 70px 70px 52px 28px;}
 .trow-regular{grid-template-columns:1fr 70px 28px;}
 .trow-sum{text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
 .trow-sum.ok{color:var(--green);}
 .trow-sum.over{color:var(--red);}
-.btn-icon{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);background:transparent;
+.btn-icon{width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:transparent;
   color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;
   font-size:14px;transition:all .15s;}
 .btn-icon:hover{border-color:var(--red);color:var(--red);}
-.btn-icon.add{border-color:rgba(201,168,76,.3);color:var(--gold);}
+.btn-icon.add{border-color:rgba(181,113,74,.3);color:var(--gold);}
 .btn-icon.add:hover{background:var(--gold-dim);border-color:var(--gold);}
 .checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;}
 .checkbox-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--gold);cursor:pointer;}
@@ -225,6 +235,43 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+/* 排行榜樣式 — 尊榮版 */
+.ranking-board{margin-bottom:22px;}
+.ranking-panel{
+  background:linear-gradient(135deg,#2a1e10 0%,#3d2a12 40%,#2e1f0d 100%);
+  border:1px solid rgba(181,113,74,.45);border-radius:14px;
+  padding:20px 26px 18px;position:relative;overflow:hidden;
+  box-shadow:0 8px 32px rgba(40,20,5,.28),0 0 0 1px rgba(181,113,74,.12) inset,
+             0 1px 0 rgba(255,220,160,.18) inset;}
+.ranking-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,rgba(220,170,90,.9) 30%,rgba(255,230,150,1) 50%,rgba(220,170,90,.9) 70%,transparent 100%);}
+.ranking-panel::after{content:'';position:absolute;bottom:-40px;right:-20px;width:120px;height:120px;
+  border-radius:50%;background:radial-gradient(circle,rgba(181,113,74,.12) 0%,transparent 70%);pointer-events:none;}
+.ranking-title{font-size:12px;font-family:'DM Mono',monospace;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(220,180,120,.85);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;}
+.ranking-title::before{content:'◆';color:rgba(220,170,90,.8);font-size:7px;}
+.ranking-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(181,113,74,.3),transparent);}
+.ranking-horizontal{display:flex;align-items:stretch;flex-wrap:wrap;gap:0;}
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 24px 8px 0;
+  border-right:1px solid rgba(181,113,74,.2);margin-right:24px;}
+.rank-item:last-child{border-right:none;margin-right:0;padding-right:0;}
+.rank-medal{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;flex-shrink:0;
+  position:relative;}
+.rank-medal.gold{
+  background:linear-gradient(135deg,#d4a547 0%,#f0cc6a 40%,#c8922e 100%);
+  color:#3a1e00;box-shadow:0 2px 8px rgba(212,165,71,.5),0 0 12px rgba(240,204,106,.25);}
+.rank-medal.silver{
+  background:linear-gradient(135deg,#a0989088 0%,#c8c0b8 40%,#90888088 100%);
+  color:#2a2018;box-shadow:0 2px 6px rgba(160,152,144,.4);}
+.rank-medal.bronze{
+  background:linear-gradient(135deg,#b5814a 0%,#d4a06a 40%,#a07040 100%);
+  color:#2a1000;box-shadow:0 2px 6px rgba(181,129,74,.4);}
+.rank-name{font-family:'Noto Serif TC',serif;font-size:15px;color:rgba(240,225,200,.95);font-weight:500;
+  letter-spacing:.5px;}
+.rank-value{font-family:'DM Mono',monospace;font-size:13px;
+  color:rgba(220,175,95,.95);white-space:nowrap;margin-left:3px;letter-spacing:.3px;}
 @media(max-width:1100px){
   .detail-top{grid-template-columns:1fr 1fr;}
   .rec-grid-monthly,.rec-grid-regular{grid-template-columns:1fr 1fr 1fr;}
@@ -247,13 +294,18 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
 
 <header class="header">
   <div class="header-brand">
-    <div class="header-icon">草</div>
+    <div class="header-icon">🌱</div>
     <div>
       <div class="header-title">草草投資型客戶管理系統</div>
       <div class="header-sub">GRASS INVESTMENT CLIENT TRACKER</div>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:16px;">
+  <nav class="header-tabs">
+    <div class="header-tab active" id="tab-monthly" onclick="switchTab('monthly')">月配息保單 <span class="tab-count" id="tc-monthly">0</span></div>
+    <div class="header-tab" id="tab-regular" onclick="switchTab('regular')">定期定額 <span class="tab-count" id="tc-regular">0</span></div>
+    <div class="header-tab" id="tab-savings" onclick="switchTab('savings')">儲蓄險 <span class="tab-count" id="tc-savings">0</span></div>
+  </nav>
+  <div style="display:flex;align-items:center;gap:16px;padding:14px 0;">
     <div style="text-align:right;">
       <div style="font-size:9px;color:var(--text-muted);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:4px;justify-content:flex-end;">
         <span class="sync-dot" id="sync-dot"></span>同步狀態
@@ -263,12 +315,6 @@ td{padding:12px 13px;font-size:13px;vertical-align:middle;}
     <button class="btn-gold" id="btn-add-top" onclick="openClientModal(null)">＋ 新增客戶</button>
   </div>
 </header>
-<div class="main-tabs">
-  <div class="main-tab active" id="tab-all" onclick="switchTab('all')">全部 <span class="tab-count" id="tc-all">0</span></div>
-  <div class="main-tab" id="tab-monthly" onclick="switchTab('monthly')">月配息保單 <span class="tab-count" id="tc-monthly">0</span></div>
-  <div class="main-tab" id="tab-regular" onclick="switchTab('regular')">定期定額 <span class="tab-count" id="tc-regular">0</span></div>
-  <div class="main-tab" id="tab-savings" onclick="switchTab('savings')">儲蓄險 <span class="tab-count" id="tc-savings">0</span></div>
-</div>
 <div class="main" id="app"></div>
 <div id="modal-overlay" class="modal-overlay" style="display:none" onclick="overlayClick(event)">
   <div class="modal" id="modal-box"></div>
@@ -305,7 +351,8 @@ var MONTHLY_PRODUCTS=[
 var REGULAR_PRODUCTS=[
   {company:'安聯人壽',product:'10來旺'},
   {company:'富邦人壽',product:'UNAB'},
-  {company:'富邦人壽',product:'UNOB'}
+  {company:'富邦人壽',product:'UNOB'},
+  {company:'安達人壽',product:'鴻利鑫喜'}
 ];
 // 儲蓄險：{company, product}
 var SAVINGS_PRODUCTS=[
@@ -347,7 +394,7 @@ var DEMO={
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 var db = {clients:[], savings:[]};
-var currentTab='all';
+var currentTab='monthly';
 var viewMode='list';
 var currentId=null;
 var mType='monthly';
@@ -399,7 +446,7 @@ onValue(dbRef, function(snapshot){
     fbLoaded=true;
     document.getElementById('loading-screen').style.display='none';
     setSyncStatus('ok');
-    switchTab('all');
+    switchTab('monthly');
     updateLastEdited();
   } else {
     // Real-time update from another device
@@ -415,7 +462,7 @@ onValue(dbRef, function(snapshot){
     fbLoaded=true;
     db=JSON.parse(JSON.stringify(DEMO));
     document.getElementById('loading-screen').style.display='none';
-    switchTab('all');
+    switchTab('monthly');
   }
 });
 
@@ -456,8 +503,8 @@ function sCard(label,val,sub){
     +'<span class="stat-sub-inline">'+sub+'</span></div></div>';
 }
 function sCardDual(label,twdVal,usdVal){
-  var twdHtml=twdVal?'<div style="font-size:17px;color:var(--gold-light);font-family:Playfair Display,serif;line-height:1.3"><span style="font-size:10px;color:var(--gold);font-family:DM Mono,monospace;letter-spacing:1px;margin-right:4px">NT.</span>'+twdVal+'</div>':'';
-  var usdHtml=usdVal?'<div style="font-size:17px;color:var(--blue);font-family:Playfair Display,serif;line-height:1.3;margin-top:2px"><span style="font-size:10px;color:#7ab3e8;font-family:DM Mono,monospace;letter-spacing:1px;margin-right:4px">USD.</span>'+usdVal+'</div>':'';
+  var twdHtml=twdVal?'<div style="font-size:17px;color:var(--gold);font-family:Playfair Display,serif;line-height:1.3"><span style="font-size:10px;color:var(--gold);font-family:DM Mono,monospace;letter-spacing:1px;margin-right:4px">NT.</span>'+twdVal+'</div>':'';
+  var usdHtml=usdVal?'<div style="font-size:17px;color:var(--blue);font-family:Playfair Display,serif;line-height:1.3;margin-top:2px"><span style="font-size:10px;color:var(--blue);font-family:DM Mono,monospace;letter-spacing:1px;margin-right:4px">USD.</span>'+usdVal+'</div>':'';
   return'<div class="stat-card"><div class="stat-label">'+label+'</div>'+(twdHtml||usdHtml?twdHtml+usdHtml:'<div class="stat-value">—</div>')+'</div>';
 }
 function calcPolicyYear(signDate){
@@ -508,14 +555,14 @@ function calcCumPremium(signDate,premium,payFreq){
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(tab){
   currentTab=tab;viewMode='list';currentId=null;sortCol=null;sortDir=1;
-  ['all','monthly','regular','savings'].forEach(function(t){
-    document.getElementById('tab-'+t).className='main-tab'+(tab===t?' active':'');
+  ['monthly','regular','savings'].forEach(function(t){
+    document.getElementById('tab-'+t).className='header-tab'+(tab===t?' active':'');
   });
   var btn=document.getElementById('btn-add-top');
   if(tab==='savings'){btn.style.display='none';}
   else{
     btn.style.display='inline-flex';
-    btn.textContent=tab==='monthly'?'＋ 新增月配息客戶':tab==='regular'?'＋ 新增定期定額客戶':'＋ 新增客戶';
+    btn.textContent=tab==='monthly'?'＋ 新增月配息客戶':'＋ 新增定期定額客戶';
   }
   render();
 }
@@ -523,7 +570,6 @@ window.switchTab=switchTab;
 
 function updateTabCounts(){
   var sv=(db.savings||[]).length;
-  document.getElementById('tc-all').textContent=db.clients.length+sv;
   document.getElementById('tc-monthly').textContent=db.clients.filter(function(c){return c.type==='monthly';}).length;
   document.getElementById('tc-regular').textContent=db.clients.filter(function(c){return c.type==='regular';}).length;
   document.getElementById('tc-savings').textContent=sv;
@@ -573,10 +619,88 @@ function sortClients(arr){
   });
 }
 
+// ─── RANKING HELPERS ─────────────────────────────────────────────────────────
+function fmtRankName(fullName){
+  if(!fullName)return'?';
+  if(fullName.length===1)return fullName;
+  if(fullName.length===2)return fullName.charAt(0)+'O';
+  return fullName.charAt(0)+'O'+fullName.charAt(fullName.length-1);
+}
+function calcMonthlyRankings(all){
+  var principalMap={},interestMap={};
+  all.forEach(function(c){
+    var key=c.name||'?';
+    var last=c.records&&c.records.length?c.records[c.records.length-1]:null;
+    var ep=parseFloat(c.entryPrincipal)||0;
+    var epTWD=c.currency==='美金'?ep*32:ep;
+    principalMap[key]=(principalMap[key]||0)+epTWD;
+    if(last){
+      var ci=parseFloat(last.cumInterest)||0;
+      var ciTWD=c.currency==='美金'?ci*32:ci;
+      var sign=c.signDate?new Date(c.signDate):new Date();
+      var now=new Date();
+      var months=(now.getFullYear()-sign.getFullYear())*12+(now.getMonth()-sign.getMonth());
+      if(months<1)months=1;
+      var monthly=ciTWD/months;
+      interestMap[key]=(interestMap[key]||0)+monthly;
+    }
+  });
+  function toTop3(map){
+    return Object.keys(map).map(function(k){return{name:fmtRankName(k),val:map[k]};})
+      .sort(function(a,b){return b.val-a.val;}).slice(0,3);
+  }
+  return{principal:toTop3(principalMap),interest:toTop3(interestMap)};
+}
+function calcRegularRankings(all){
+  var map={};
+  all.forEach(function(c){
+    var key=c.name||'?';
+    var tp=parseFloat(c.targetPremium)||0;
+    var monthly=(c.payFreq==='年繳')?tp/12:tp;
+    var monthlyTWD=c.currency==='美金'?monthly*32:monthly;
+    map[key]=(map[key]||0)+monthlyTWD;
+  });
+  return Object.keys(map).map(function(k){return{name:fmtRankName(k),val:map[k]};})
+    .sort(function(a,b){return b.val-a.val;}).slice(0,3);
+}
+// 進場本金用萬/億縮寫；每月領息/定額用完整千分位
+function fmtRankPrincipal(n){
+  if(n>=1e8)return'NT. '+(n/1e8).toFixed(1)+'億';
+  if(n>=1e4)return'NT. '+(n/1e4).toFixed(0)+'萬';
+  return'NT. '+Math.round(n).toLocaleString();
+}
+function fmtRankMonthly(n){
+  return'NT. '+Math.round(n).toLocaleString();
+}
+function medalClass(i){return i===0?'gold':i===1?'silver':'bronze';}
+function horizItems(arr,fmtFn,suffix){
+  if(!arr.length)return'<div style="font-size:12px;color:var(--text-muted);padding:4px 0">尚無資料</div>';
+  return'<div class="ranking-horizontal">'+arr.map(function(item,i){
+    return'<div class="rank-item">'
+      +'<div class="rank-medal '+medalClass(i)+'">'+(i+1)+'</div>'
+      +'<span class="rank-name">'+item.name+'</span>'
+      +'<span class="rank-value">'+fmtFn(item.val)+(suffix||'')+'</span>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+function buildRankingBoard(title1,data1,title2,data2){
+  return'<div class="ranking-board" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
+    +'<div class="ranking-panel"><div class="ranking-title">'+title1+'</div>'
+    +horizItems(data1,fmtRankPrincipal,'')+'</div>'
+    +'<div class="ranking-panel"><div class="ranking-title">'+title2+'</div>'
+    +horizItems(data2,fmtRankMonthly,'/月')+'</div>'
+    +'</div>';
+}
+function buildRegularRankingBoard(title,data){
+  return'<div class="ranking-board">'
+    +'<div class="ranking-panel"><div class="ranking-title">'+title+'</div>'
+    +horizItems(data,fmtRankMonthly,'/月')+'</div>'
+    +'</div>';
+}
+
 function render(){updateTabCounts();if(viewMode==='list')renderList();else renderDetail();}
 function renderList(){
-  if(currentTab==='all')renderAllList();
-  else if(currentTab==='monthly')renderMonthlyList();
+  if(currentTab==='monthly')renderMonthlyList();
   else if(currentTab==='regular')renderRegularList();
   else renderSavingsList();
 }
@@ -699,6 +823,8 @@ function renderMonthlyList(){
   var usd_p_str=usd_p>0?Math.round(usd_p).toLocaleString():'';
   var twd_i_str=twd_i>0?Math.round(twd_i).toLocaleString():'';
   var usd_i_str=usd_i>0?Math.round(usd_i).toLocaleString():'';
+  var mRank=calcMonthlyRankings(all);
+  var rankHtml=buildRankingBoard('進場本金 Top 3',mRank.principal,'每月領息 Top 3',mRank.interest);
   document.getElementById('app').innerHTML=
     '<div class="stats-bar stats-bar-4">'
     +sCard('月配息客戶',all.length,'位')
@@ -706,6 +832,7 @@ function renderMonthlyList(){
     +sCardDual('累計已領利息合計',twd_i_str,usd_i_str)
     +sCard('美金件數',all.filter(function(c){return c.currency==='美金';}).length,'件')
     +'</div>'
+    +rankHtml
     +'<div class="section-header"><div class="section-title">月配息保單客戶</div>'
     +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
     +'<div class="table-wrap"><table><thead><tr>'
@@ -748,10 +875,13 @@ function renderRegularList(){
   var totalP=0,totalPaid=0;
   all.forEach(function(c){var l=c.records&&c.records.length?c.records[c.records.length-1]:null;if(l){totalP+=parseFloat(l.principal)||0;totalPaid+=parseFloat(l.cumPaid)||0;}});
   var rows=sortClients(all).map(buildRegularRow).join('');
+  var rRankData=calcRegularRankings(all);
+  var rRankHtml=buildRegularRankingBoard('每月定期定額金額 Top 3',rRankData);
   document.getElementById('app').innerHTML=
     '<div class="stats-bar stats-bar-4">'
     +sCard('定期定額客戶',all.length,'位')+sCard('最新帳面合計',fmtM(totalP),'元')+sCard('累計已繳合計',fmtM(totalPaid),'元')+sCard('緩繳中',all.filter(function(c){return c.isPaused;}).length,'件')
     +'</div>'
+    +rRankHtml
     +'<div class="section-header"><div class="section-title">定期定額客戶</div>'
     +'<input class="search-box" type="text" placeholder="搜尋姓名、商品…" oninput="filterList(this.value)"></div>'
     +'<div class="table-wrap"><table><thead><tr>'
@@ -860,9 +990,9 @@ function filterList(q){
     var f=(db.savings||[]).filter(function(s){return s.name.includes(q)||s.company.includes(q)||(s.productName||'').includes(q);});
     document.getElementById('list-tbody').innerHTML=f.map(buildSavingsRow).join('');return;
   }
-  var pool=currentTab==='all'?db.clients:db.clients.filter(function(c){return c.type===currentTab;});
+  var pool=db.clients.filter(function(c){return c.type===currentTab;});
   var f=pool.filter(function(c){return c.name.includes(q)||(c.productName||'').includes(q)||c.company.includes(q);});
-  var builder=currentTab==='all'?buildAllRow:currentTab==='monthly'?buildMonthlyRow:buildRegularRow;
+  var builder=currentTab==='monthly'?buildMonthlyRow:buildRegularRow;
   document.getElementById('list-tbody').innerHTML=sortClients(f).map(builder).join('');
 }
 window.filterList=filterList;
